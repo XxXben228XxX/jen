@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo6-backend-deployment # Ім'я вашого розгортання
+  labels:
+    app: demo6-backend
+spec:
+  replicas: 1 # Кількість копій вашого додатку
+  selector:
+    matchLabels:
+      app: demo6-backend
+  template:
+    metadata:
+      labels:
+        app: demo6-backend
+    spec:
+      containers:
+        - name: demo6-backend # Ім'я контейнера в поди
+          image: demo6:latest # Ім'я Docker-образу, яке буде зібрано
+          ports:
+            - containerPort: 8080 # Порт, який слухає ваш Spring Boot додаток
+          env:
+            # Налаштування підключення до MSSQL
+            # 'host.minikube.internal' дозволяє Minikube звертатися до сервісів на хост-машині.
+            # Якщо це не спрацює, спробуйте замінити на реальну IP-адресу вашої хост-машини.
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:sqlserver://host.minikube.internal:1433;databaseName=Test148;encrypt=true;trustServerCertificate=true;loginTimeout=30;
+            - name: SPRING_DATASOURCE_USERNAME
+              value: sa
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: TestP@ssw0rd123! # Ваш пароль, як у docker-compose.yml
+      # Вказуємо policy для завантаження образу. Якщо образ локальний, використовуємо IfNotPresent або Never
+      imagePullPolicy: IfNotPresent # Важливо для локальних образів Minikube

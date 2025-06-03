@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo6-backend-service # Ім'я сервісу
+spec:
+  selector:
+    app: demo6-backend # Має відповідати labels у deployment.yaml
+  ports:
+    - protocol: TCP
+      port: 80 # Порт, який буде слухати сервіс Minikube
+      targetPort: 8080 # Порт, який слухає контейнер вашого додатку
+  type: NodePort # Дозволяє доступ ззовні кластера Minikube

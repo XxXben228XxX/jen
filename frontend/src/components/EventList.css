@@ -1,0 +1,141 @@
+/* src/components/EventList.css */
+
+.event-list-container {
+    background-color: #282c34; /* Темний фон, як у заголовка */
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    margin-top: 30px; /* Відступ від форми додавання */
+    color: #f0f0f0; /* Світлий текст */
+}
+
+.event-list-container h2 {
+    color: #61dafb; /* Колір заголовка */
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.event-list-container ul {
+    list-style: none; /* Прибираємо стандартні маркери списку */
+    padding: 0;
+    margin: 0;
+}
+
+.event-list-item {
+    background-color: #3a3f47; /* Трохи світліший фон для кожного елемента списку */
+    padding: 15px 20px;
+    margin-bottom: 15px; /* Відступ між елементами списку */
+    border-radius: 6px;
+    text-align: left; /* Текст всередині елемента вирівнюємо по лівому краю */
+    border-left: 5px solid #61dafb; /* Синя смужка зліва, як на скріншоті */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: relative; /* Для позиціонування кастомних маркерів */
+
+    /* Додано для Flexbox - для вирівнювання вмісту події та кнопок */
+    display: flex;
+    justify-content: space-between; /* Рознести вміст і кнопки по краях */
+    align-items: center; /* Вирівняти по центру вертикально */
+    gap: 20px; /* Простір між вмістом події та блоком кнопок */
+}
+
+/* Стилізація кастомного маркера (біла точка) */
+.event-list-item::before {
+    content: '';
+    position: absolute;
+    left: -15px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    background-color: white;
+    border-radius: 50%;
+}
+
+.event-list-item h3 {
+    color: #e0e0e0;
+    margin-top: 0;
+    margin-bottom: 8px;
+    font-size: 1.4em;
+    font-weight: bold;
+}
+
+.event-list-item p {
+    margin: 5px 0;
+    color: #cccccc;
+    font-size: 0.95em;
+}
+
+.event-list-item p strong {
+    color: #f0f0f0; /* Трохи яскравіший колір для назв полів */
+    margin-right: 5px; /* Відступ після назви поля */
+}
+
+/* Стилі для контейнера кнопок */
+.event-actions {
+    display: flex;
+    flex-direction: column; /* Кнопки розташовані вертикально */
+    gap: 10px; /* Відступ між кнопками */
+}
+
+/* Стилі для кнопок "Редагувати" та "Видалити" */
+.edit-button,
+.delete-button {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    width: 100px; /* Фіксована ширина для кнопок */
+}
+
+.edit-button {
+    background-color: #e3dc7d; /* Синій колір для редагування */
+    color: #000000;
+}
+
+.edit-button:hover {
+    background-color: #6e5901;
+}
+
+.delete-button {
+    background-color: #dc3545; /* Червоний колір для видалення */
+    color: #35026b;
+}
+
+.delete-button:hover {
+    background-color: #c82333;
+}
+
+/* Стилі для повідомлень про завантаження та помилки */
+.loading-message,
+.error-message {
+    text-align: center;
+    padding: 20px;
+    font-size: 1.1em;
+}
+
+.loading-message {
+    color: #61dafb;
+}
+
+.error-message {
+    color: #ff6347;
+}
+
+/* Стилі для кнопки "Вийти" (якщо вона тут, або в App.css) */
+.logout-button {
+    background-color: #dc3545;
+    color: white;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    margin-left: 20px;
+    transition: background-color 0.3s;
+}
+
+.logout-button:hover {
+    background-color: #c82333;
+}

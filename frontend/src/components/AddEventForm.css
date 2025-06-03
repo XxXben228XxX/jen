@@ -1,0 +1,120 @@
+/* src/components/AddEventForm.css */
+
+.add-event-form-container {
+    background-color: #2a2e37; /* Темніший фон для контейнера форми */
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    max-width: 500px; /* Обмежте ширину форми */
+    margin: 30px auto; /* Центруємо форму на сторінці */
+    color: #e0e0e0; /* Світлий текст */
+}
+
+.add-event-form-container h2 {
+    color: #007bff; /* Колір заголовка форми */
+    text-align: center;
+    margin-bottom: 25px;
+    font-size: 1.8em;
+}
+
+.add-event-form .form-group {
+    margin-bottom: 18px;
+}
+
+.add-event-form label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #b0b0b0; /* Трохи світліший колір для лейблів */
+}
+
+.add-event-form input[type="text"],
+.add-event-form input[type="date"], /* Застосовуємо до поля дати */
+.add-event-form textarea {
+    width: calc(100% - 20px); /* Віднімаємо паддінг з ширини */
+    padding: 12px 10px;
+    border: 1px solid #444;
+    border-radius: 5px;
+    background-color: #3b404d; /* Темніший фон для полів вводу */
+    color: #e0e0e0;
+    font-size: 1em;
+    box-sizing: border-box; /* Важливо для коректної ширини з паддінгом */
+}
+
+.add-event-form input[type="date"] {
+    /* Додаткові стилі для розтягування поля дати */
+    min-width: 250px; /* Мінімальна ширина, щоб не стискалося */
+    /* width: 100%; */ /* Можна спробувати 100%, якщо box-sizing коректно працює */
+}
+
+
+.add-event-form textarea {
+    resize: vertical; /* Дозволити вертикальне змінення розміру */
+    min-height: 80px; /* Мінімальна висота для textarea */
+}
+
+.add-event-form input[type="text"]:focus,
+.add-event-form input[type="date"]:focus,
+.add-event-form textarea:focus {
+    outline: none;
+    border-color: #007bff; /* Синя рамка при фокусі */
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+.form-actions {
+    display: flex; /* Використовуємо flexbox для розміщення кнопок */
+    flex-direction: column; /* Розташовуємо кнопки одна під одною */
+    gap: 15px; /* Відстань між кнопками */
+    margin-top: -25px;
+}
+
+.add-event-form .submit-button,
+.add-event-form .cancel-button {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.1em;
+    font-weight: bold;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    width: 100%; /* Розтягуємо кнопки на всю ширину */
+}
+
+.add-event-form .submit-button {
+    background-color: #007bff; /* Синя кнопка */
+    color: white;
+}
+
+.add-event-form .submit-button:hover {
+    background-color: #0056b3; /* Темніша синя при наведенні */
+    transform: translateY(-2px);
+}
+
+.add-event-form .cancel-button {
+    background-color: #6c757d; /* Сіра кнопка для скасування */
+    color: white;
+}
+
+.add-event-form .cancel-button:hover {
+    background-color: #5a6268; /* Темніша сіра при наведенні */
+    transform: translateY(-2px);
+}
+
+.form-error-message {
+    color: #ff4d4d; /* Червоний колір для повідомлень про помилки */
+    text-align: center;
+    margin-bottom: 15px;
+    font-weight: bold;
+}
+
+/* Додаткові стилі для маленьких екранів, якщо потрібно */
+@media (max-width: 600px) {
+    .add-event-form-container {
+        margin: 20px;
+        padding: 15px;
+    }
+    .add-event-form .submit-button,
+    .add-event-form .cancel-button {
+        font-size: 1em;
+    }
+}

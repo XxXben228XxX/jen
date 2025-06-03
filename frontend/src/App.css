@@ -1,0 +1,92 @@
+/* src/App.css */
+/* Тут можуть бути твої глобальні стилі */
+
+body {
+    font-family: sans-serif;
+    margin: 0;
+    padding: 0;
+    color: #e0e0e0; /* Змінив на світло-сірий для кращого контрасту з чорним фоном */
+
+    /* Стилі для фону від Uiverse.io */
+    --color: rgba(114, 114, 114, 0.3);
+    background-color: #191a1a;
+    background-image: linear-gradient(0deg, transparent 24%, var(--color) 25%, var(--color) 26%, transparent 27%, transparent 74%, var(--color) 75%, var(--color) 76%, transparent 77%, transparent),
+    linear-gradient(90deg, transparent 24%, var(--color) 25%, var(--color) 26%, transparent 27%, transparent 74%, var(--color) 75%, var(--color) 76%, transparent 77%, transparent);
+    background-size: 55px 55px;
+    min-height: 100vh; /* Використовуємо min-height, щоб фон охоплював весь вміст */
+    display: flex; /* Додаємо flexbox для центрування контенту */
+    flex-direction: column; /* Елементи розташовані вертикально */
+    align-items: center; /* Центруємо по горизонталі */
+}
+
+#root {
+    /* Стилі для вашого основного контенту */
+    width: 100%; /* Дозволяємо #root займати всю доступну ширину */
+    max-width: 800px; /* Обмеження максимальної ширини для основного вмісту */
+    margin-top: 20px; /* Невеликий відступ зверху */
+    padding: 0 20px; /* Внутрішній відступ, щоб контент не прилипав до країв */
+    box-sizing: border-box; /* Важливо для коректної ширини з padding */
+}
+
+.App {
+    text-align: center;
+    width: 100%; /* Дозволяємо .App займати 100% ширини свого батьківського елемента (#root) */
+}
+
+.App-header {
+    background-color: #282c34; /* Темний фон для заголовка */
+    padding: 20px;
+    color: white;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    display: flex; /* Для вирівнювання заголовка та кнопки виходу */
+    justify-content: space-between; /* Рознести елементи по краях */
+    align-items: center; /* Вирівняти по центру вертикально */
+}
+
+.App-header h1 {
+    margin: 0;
+    font-size: 2.5em;
+}
+
+main {
+    width: 100%; /* Переконаємося, що main займає всю ширину */
+}
+
+.user-info-and-logout {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Відступ між повідомленням та кнопкою */
+}
+
+.welcome-message {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #aaffaa; /* Яскраво-зелений для привітання */
+    white-space: nowrap; /* Щоб повідомлення не переносилося на новий рядок */
+}
+/* Стилі для повідомлень */
+.message {
+    margin-top: 15px;
+    padding: 10px;
+    border-radius: 4px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.success {
+    background-color: #21a300; /* Темно-зелений для успіху */
+    color: white;
+}
+
+.error {
+    background-color: #cc0000; /* Темно-червоний для помилки */
+    color: white;
+}
+
+.error-message { /* Додано для EventList */
+    color: #cc0000;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 20px;
+}

@@ -1,0 +1,18 @@
+.form-label {
+    display: inline-block;
+    width: 120px;
+    text-align: left;
+    margin-right: 10px;
+}
+
+.form-input {
+    width: 200px;
+    margin-bottom: 10px;
+}
+
+.form-textarea {
+    width: 200px;
+    margin-bottom: 10px;
+    vertical-align: top;
+}
+

@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  db:
+    # Використовуємо власний Dockerfile для встановлення mssql-tools
+    # Це потрібно, щоб healthcheck міг використовувати команду sqlcmd.
+    build:
+      context: ./db-dockerfile # Шлях до папки з Dockerfile для бази даних
+      dockerfile: Dockerfile   # Ім'я файлу Dockerfile всередині цієї папки
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "TestP@ssw0rd123!" # <--- ОБОВ'ЯЗКОВО ЗМІНІТЬ НА СВІЙ СИЛЬНИЙ ПАРОЛЬ!
+      MSSQL_PID: "Developer"
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql_data:/var/opt/mssql # Постійне зберігання даних бази даних
+    networks:
+      - ticket-network
+    healthcheck:
+      # Перевіряємо доступність SQL Server за допомогою sqlcmd
+      # Пароль тут має бути ТАКИЙ Ж САМИЙ, як SA_PASSWORD
+      test: [ "CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P \"TestP@ssw0rd123!\" -Q \"SELECT 1\" || exit 1" ]
+      interval: 10s       # Інтервал між перевірками
+      timeout: 5s         # Таймаут для кожної перевірки
+      retries: 10         # Кількість спроб, перш ніж контейнер буде позначено як unhealthy
+      start_period: 120s   # Початковий період, протягом якого healthcheck не буде позначати контейнер як unhealthy
+      # Це дає MSSQL достатньо часу для повної ініціалізації
+
+  backend:
+    image: ticket-backend
+    build:
+      context: .
+      dockerfile: ./backend/Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      # Залежить від db, і чекає, поки db стане "healthy"
+      # Це запобігає "Connection refused" помилкам на старті backend
+      db:
+        condition: service_healthy
+    networks:
+      - ticket-network
+    environment:
+      # URL підключення до MSSQL Server. 'db' - це ім'я сервісу у docker-compose
+      SPRING_DATASOURCE_URL: jdbc:sqlserver://db:1433;databaseName=Test148;encrypt=true;trustServerCertificate=true;loginTimeout=30;
+      SPRING_DATASOURCE_USERNAME: sa
+      SPRING_DATASOURCE_PASSWORD: "TestP@ssw0rd123!" # <--- ПАРОЛЬ МАЄ ЗБІГАТИСЯ З SA_PASSWORD
+    # Закоментовано: раніше використовувалося для затримки запуску, тепер не потрібно завдяки healthcheck
+    # entrypoint: ["/bin/sh", "-c", "while ! nc -z db 1433; do sleep 1; done; java -jar /app/app.jar"]
+
+  frontend:
+    image: ticket-frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # REACT_APP_API_URL буде передано під час збирання образу
+        REACT_APP_API_URL: ${REACT_APP_API_URL}
+    ports:
+      - "3000:80" # Порт 3000 на хості буде проксіровано на порт 80 в контейнері (стандартний для веб-сервера)
+    depends_on:
+      - backend # Frontend залежить від backend, оскільки потребує доступу до його API
+    networks:
+      - ticket-network
+    environment:
+      - REACT_APP_API_URL=${REACT_APP_API_URL} # REACT_APP_API_URL буде доступний всередині контейнера
+
+networks:
+  ticket-network:
+    driver: bridge # Визначаємо загальну мережу для всіх сервісів
+
+volumes:
+  mssql_data: {} # Визначаємо пойменований том для постійного зберігання даних MSSQL
