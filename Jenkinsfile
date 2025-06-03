@@ -9,8 +9,6 @@ pipeline {
     }
 
     stages {
-        // ВИДАЛЕНИЙ ЕТАП 'Manual Workspace Cleanup'
-
         stage('Checkout') {
             steps {
                 git branch: 'main', url: 'https://github.com/XxXben228XxX/jen.git'
@@ -18,14 +16,22 @@ pipeline {
             }
         }
 
+        stage('Debug Workspace') { // Цей етап покаже файли, щоб перевірити
+            steps {
+                script {
+                    echo "Listing files in workspace:"
+                    sh 'pwd'
+                    sh 'ls -R'
+                }
+            }
+        }
+
         stage('Build') {
             steps {
                 script {
                     withEnv(["PATH+MAVEN=${tool 'Maven 3.9.6'}/bin"]) {
-                        dir('backend') {
-                            sh 'mvn clean install -DskipTests'
-                            echo "Project built successfully."
-                        }
+                        sh 'mvn clean install -DskipTests'
+                        echo "Project built successfully."
                     }
                 }
             }
@@ -34,37 +40,30 @@ pipeline {
         stage('Test') {
             steps {
                 script {
-                    dir('backend') {
-                        sh 'mvn test'
-                        echo "Tests executed successfully."
-                    }
+                    sh 'mvn test'
+                    echo "Tests executed successfully."
                 }
             }
-            // Якщо у вас є тести, які можуть падати, і ви хочете, щоб пайплайн продовжувався,
-            // ви можете обернути sh 'mvn test' у try-catch або використовувати опції Maven.
         }
 
         stage('Package') {
             steps {
                 script {
-                    dir('backend') {
-                        sh 'mvn package -DskipTests'
-                        echo "Application packaged into JAR."
-                        archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
-                    }
+                    sh 'mvn package -DskipTests'
+                    echo "Application packaged into JAR."
+                    archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
                 }
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build Docker Image') { // <<< ЗМІНЕНО ТУТ
             steps {
                 script {
                     def imageName = "demo6:latest"
 
                     withEnv(["PATH+DOCKER=/usr/bin"]) {
-                        dir('backend') {
-                            sh "docker build -t ${imageName} ."
-                        }
+                        // Використовуємо Dockerfile для бек-енду з папки db-dockerfile
+                        sh "docker build -t ${imageName} -f db-dockerfile/Dockerfile ."
                     }
                     echo "Docker image ${imageName} built."
                 }
