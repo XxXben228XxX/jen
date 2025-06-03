@@ -16,7 +16,7 @@ pipeline {
             steps {
                 // Витягування коду з вашого Git репозиторію
                 // ЗАМІНІТЬ: на URL вашого репозиторію та гілку
-                git branch: 'main', url: 'https://github.com/your-username/your-repository-name.git'
+                git branch: 'main', url: 'https://github.com/XxXben228XxX/jen.git'
                 echo "Repository checked out."
             }
         }
