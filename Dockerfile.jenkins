@@ -1,0 +1,24 @@
+# Базуємося на офіційному LTS образі Jenkins
+FROM jenkins/jenkins:lts
+
+# Переходимо на користувача root для встановлення пакетів
+USER root
+
+# Оновлюємо списки пакетів та встановлюємо необхідні утиліти для встановлення Docker CLI
+RUN apt-get update && \
+    apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release && \
+    # Створюємо директорію для ключів APT
+    mkdir -p /etc/apt/keyrings && \
+    # Завантажуємо офіційний ключ Docker GPG
+    curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg && \
+    # Додаємо репозиторій Docker до списку джерел APT
+    echo \
+      "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
+      $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null && \
+    # Знову оновлюємо списки пакетів після додавання репозиторію Docker
+    apt-get update && \
+    # Встановлюємо лише Docker CLI (не повний Docker Engine)
+    apt-get install -y docker-ce-cli
+
+# Повертаємося до стандартного користувача Jenkins
+USER jenkins

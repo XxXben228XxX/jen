@@ -33,7 +33,7 @@ services:
       context: .
       dockerfile: ./backend/Dockerfile
     ports:
-      - "8080:8080"
+      - "8081:8080"
     depends_on:
       # Залежить від db, і чекає, поки db стане "healthy"
       # Це запобігає "Connection refused" помилкам на старті backend
@@ -69,17 +69,18 @@ services:
   # ДОДАНО СЕРВІС JENKINS
   jenkins:
     container_name: jenkins_server
-    image: jenkins/jenkins:lts
+    build: # <--- Ця секція змушує Docker Compose зібрати власний образ
+      context: .            # <--- Контекст збірки - поточна директорія (де знаходиться Dockerfile.jenkins)
+      dockerfile: Dockerfile.jenkins # <--- Вказуємо шлях до нашого нового Dockerfile
+    # image: jenkins/jenkins:lts # <--- Цей рядок потрібно ЗАКОМЕНТУВАТИ або ВИДАЛИТИ
     ports:
-      - "8080:8080"
+      - "8082:8080"
       - "50000:50000"
     volumes:
       - jenkins_home:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock # Монтуємо Docker-сокет хоста
-      # Якщо ви на Windows і Docker Desktop, то /var/run/docker.sock - це правильний шлях для Linux Subsystem
-      # Якщо у вас Linux, також використовуйте /var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
-      - DOCKER_HOST=unix:///var/run/docker.sock # Вказуємо Jenkins, де шукати Docker
+      - DOCKER_HOST=unix:///var/run/docker.sock
     # Якщо Jenkins потрібно взаємодіяти з іншими сервісами (db, backend, frontend) за їхніми іменами (наприклад, для розгортання),
     # він також має бути в тій же мережі:
     # networks:
