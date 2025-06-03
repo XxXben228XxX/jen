@@ -26,51 +26,48 @@ pipeline {
             }
         }
 
-        stage('Build') {
+        stage('Build') { // <<< ЗМІНЕНО ТУТ (ВИДАЛЕНО dir('backend'))
             steps {
                 script {
                     withEnv(["PATH+MAVEN=${tool 'Maven 3.9.6'}/bin"]) {
-                        dir('backend') {
-                            echo "Attempting to read backend/pom.xml content:" // Додаємо цей рядок
-                            sh 'cat pom.xml' // <<< ДОДАНО ЦЮ КОМАНДУ
-                            sh 'mvn clean install -DskipTests'
-                            echo "Project built successfully."
-                        }
+                        // Maven буде працювати з pom.xml у корені
+                        sh 'mvn clean install -DskipTests'
+                        echo "Project built successfully."
                     }
                 }
             }
         }
 
-        stage('Test') {
+        stage('Test') { // <<< ЗМІНЕНО ТУТ (ВИДАЛЕНО dir('backend'))
             steps {
                 script {
-                    dir('backend') {
-                        sh 'mvn test'
-                        echo "Tests executed successfully."
-                    }
+                    // Maven буде працювати з pom.xml у корені
+                    sh 'mvn test'
+                    echo "Tests executed successfully."
                 }
             }
         }
 
-        stage('Package') {
+        stage('Package') { // <<< ЗМІНЕНО ТУТ (ВИДАЛЕНО dir('backend'))
             steps {
                 script {
-                    dir('backend') {
-                        sh 'mvn package -DskipTests'
-                        echo "Application packaged into JAR."
-                        archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
-                    }
+                    // Maven буде працювати з pom.xml у корені
+                    sh 'mvn package -DskipTests'
+                    echo "Application packaged into JAR."
+                    // JAR-файл буде в target/ в корені
+                    archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
                 }
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build Docker Image') { // <<< ЗМІНЕНО ТУТ
             steps {
                 script {
                     def imageName = "demo6:latest"
 
                     withEnv(["PATH+DOCKER=/usr/bin"]) {
-                        sh "docker build -t ${imageName} -f db-dockerfile/Dockerfile backend"
+                        // Використовуємо Dockerfile з db-dockerfile/, але контекст збірки - коренева директорія
+                        sh "docker build -t ${imageName} -f db-dockerfile/Dockerfile ."
                     }
                     echo "Docker image ${imageName} built."
                 }
