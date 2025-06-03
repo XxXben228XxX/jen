@@ -9,14 +9,8 @@ pipeline {
     }
 
     stages {
-        stage('Manual Workspace Cleanup') {
-            steps {
-                script {
-                    sh 'rm -rf .'
-                    echo 'Workspace manually cleaned.'
-                }
-            }
-        }
+        // ВИДАЛЕНИЙ ЕТАП 'Manual Workspace Cleanup'
+
         stage('Checkout') {
             steps {
                 git branch: 'main', url: 'https://github.com/XxXben228XxX/jen.git'
@@ -46,6 +40,8 @@ pipeline {
                     }
                 }
             }
+            // Якщо у вас є тести, які можуть падати, і ви хочете, щоб пайплайн продовжувався,
+            // ви можете обернути sh 'mvn test' у try-catch або використовувати опції Maven.
         }
 
         stage('Package') {
@@ -60,12 +56,11 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') { // <<< ЗМІНЕНИЙ ЕТАП
+        stage('Build Docker Image') {
             steps {
                 script {
                     def imageName = "demo6:latest"
 
-                    // Використовуємо withEnv, щоб додати /usr/bin (де зазвичай знаходиться Docker CLI) до PATH
                     withEnv(["PATH+DOCKER=/usr/bin"]) {
                         dir('backend') {
                             sh "docker build -t ${imageName} ."
