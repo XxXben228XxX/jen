@@ -4,7 +4,7 @@ FROM jenkins/jenkins:lts
 # Переходимо на користувача root для встановлення пакетів та налаштування груп
 USER root
 
-# Встановлюємо Docker CLI (той же код, що і раніше)
+# Встановлюємо Docker CLI
 RUN apt-get update && \
     apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release && \
     mkdir -p /etc/apt/keyrings && \
@@ -15,11 +15,10 @@ RUN apt-get update && \
     apt-get update && \
     apt-get install -y docker-ce-cli
 
-# НОВІ РЯДКИ: Додаємо користувача 'jenkins' до групи 'docker'
-# Спочатку спробуємо створити групу 'docker' (якщо її ще немає в образі), потім додамо користувача jenkins до неї.
-# Це дозволить користувачу jenkins отримати доступ до монтованого Docker-сокета хоста.
-RUN groupadd docker || true # Створює групу docker, якщо її немає. || true дозволяє ігнорувати помилку, якщо група вже існує.
-RUN usermod -aG docker jenkins # Додає користувача 'jenkins' до групи 'docker'
+# Ці рядки можна залишити, хоча USER root нижче перекриє їх вплив на дозволи сокета.
+RUN groupadd docker || true
+RUN usermod -aG docker jenkins
 
-# Повертаємося до стандартного користувача Jenkins
-USER jenkins
+# ЗМІНЕНО: Тепер Jenkins-контейнер буде працювати від імені користувача root
+# Це вирішить проблеми з дозволами до Docker-сокета.
+USER root

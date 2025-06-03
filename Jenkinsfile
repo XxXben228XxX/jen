@@ -12,10 +12,19 @@ pipeline {
     }
 
     stages {
+        stage('Manual Workspace Cleanup') { // <<< ЦЕЙ НОВИЙ ЕТАП МИ ДОДАЄМО
+            steps {
+                script {
+                    // Примусове видалення вмісту робочої директорії
+                    // Це обхідний шлях, якщо "Wipe out workspace" у налаштуваннях завдання не ефективний.
+                    sh 'rm -rf .' // Видаляє всі файли та директорії рекурсивно у поточному workspace
+                    echo 'Workspace manually cleaned.'
+                }
+            }
+        }
         stage('Checkout') {
             steps {
                 // Витягування коду з вашого Git репозиторію
-                // ЗАМІНІТЬ: на URL вашого репозиторію та гілку
                 git branch: 'main', url: 'https://github.com/XxXben228XxX/jen.git'
                 echo "Repository checked out."
             }
@@ -25,8 +34,10 @@ pipeline {
             steps {
                 script {
                     // Збірка проекту за допомогою Maven
-                    sh 'mvn clean install -DskipTests'
-                    echo "Project built successfully."
+                    dir('backend') { // Переходимо в директорію 'backend', якщо там знаходиться pom.xml
+                        sh 'mvn clean install -DskipTests'
+                        echo "Project built successfully."
+                    }
                 }
             }
         }
@@ -35,8 +46,10 @@ pipeline {
             steps {
                 script {
                     // Виконання модульних та інтеграційних тестів
-                    sh 'mvn test'
-                    echo "Tests executed successfully."
+                    dir('backend') { // Переходимо в директорію 'backend'
+                        sh 'mvn test'
+                        echo "Tests executed successfully."
+                    }
                 }
             }
         }
@@ -45,9 +58,12 @@ pipeline {
             steps {
                 script {
                     // Упаковка додатку у виконуваний JAR файл
-                    sh 'mvn package -DskipTests'
-                    echo "Application packaged into JAR."
-                    archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+                    dir('backend') { // Переходимо в директорію 'backend'
+                        sh 'mvn package -DskipTests'
+                        echo "Application packaged into JAR."
+                        // Шлях до артефактів відносно директорії 'backend'
+                        archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+                    }
                 }
             }
         }
@@ -58,9 +74,7 @@ pipeline {
                     def imageName = "demo6:latest" // Ім'я образу: 'demo6'
 
                     // Переходимо в директорію, де знаходиться Dockerfile для бекенду
-                    // Якщо ваш Dockerfile знаходиться в корені проекту, залиште dir('.')
-                    // Якщо Dockerfile знаходиться в піддиректорії 'backend', використовуйте dir('backend')
-                    dir('backend') { // Припускаємо, що Dockerfile знаходиться в директорії 'backend'
+                    dir('backend') {
                         sh "docker build -t ${imageName} ."
                     }
                     echo "Docker image ${imageName} built."
