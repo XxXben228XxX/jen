@@ -16,7 +16,7 @@ pipeline {
             }
         }
 
-        stage('Debug Workspace') { // Цей етап покаже файли, щоб перевірити
+        stage('Debug Workspace') { // Залишаємо для перевірки
             steps {
                 script {
                     echo "Listing files in workspace:"
@@ -26,32 +26,38 @@ pipeline {
             }
         }
 
-        stage('Build') {
+        stage('Build') { // <<< ЗМІНЕНО ТУТ
             steps {
                 script {
                     withEnv(["PATH+MAVEN=${tool 'Maven 3.9.6'}/bin"]) {
-                        sh 'mvn clean install -DskipTests'
-                        echo "Project built successfully."
+                        dir('backend') { // ПОВЕРНУЛИ dir('backend')
+                            sh 'mvn clean install -DskipTests'
+                            echo "Project built successfully."
+                        }
                     }
                 }
             }
         }
 
-        stage('Test') {
+        stage('Test') { // <<< ЗМІНЕНО ТУТ
             steps {
                 script {
-                    sh 'mvn test'
-                    echo "Tests executed successfully."
+                    dir('backend') { // ПОВЕРНУЛИ dir('backend')
+                        sh 'mvn test'
+                        echo "Tests executed successfully."
+                    }
                 }
             }
         }
 
-        stage('Package') {
+        stage('Package') { // <<< ЗМІНЕНО ТУТ
             steps {
                 script {
-                    sh 'mvn package -DskipTests'
-                    echo "Application packaged into JAR."
-                    archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+                    dir('backend') { // ПОВЕРНУЛИ dir('backend')
+                        sh 'mvn package -DskipTests'
+                        echo "Application packaged into JAR."
+                        archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+                    }
                 }
             }
         }
@@ -62,8 +68,10 @@ pipeline {
                     def imageName = "demo6:latest"
 
                     withEnv(["PATH+DOCKER=/usr/bin"]) {
-                        // Використовуємо Dockerfile для бек-енду з папки db-dockerfile
-                        sh "docker build -t ${imageName} -f db-dockerfile/Dockerfile ."
+                        // ЗМІНЕНО: вказуємо Dockerfile та контекст збірки
+                        // Dockerfile знаходиться у db-dockerfile/Dockerfile,
+                        // а JAR-файл буде у backend/target, тому контекст збірки - папка backend.
+                        sh "docker build -t ${imageName} -f db-dockerfile/Dockerfile backend"
                     }
                     echo "Docker image ${imageName} built."
                 }
