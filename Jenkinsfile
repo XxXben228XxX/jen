@@ -26,11 +26,13 @@ pipeline {
             }
         }
 
-        stage('Build') { // <<< ЗМІНЕНО ТУТ
+        stage('Build') {
             steps {
                 script {
                     withEnv(["PATH+MAVEN=${tool 'Maven 3.9.6'}/bin"]) {
-                        dir('backend') { // ПОВЕРНУЛИ dir('backend')
+                        dir('backend') {
+                            echo "Attempting to read backend/pom.xml content:" // Додаємо цей рядок
+                            sh 'cat pom.xml' // <<< ДОДАНО ЦЮ КОМАНДУ
                             sh 'mvn clean install -DskipTests'
                             echo "Project built successfully."
                         }
@@ -39,10 +41,10 @@ pipeline {
             }
         }
 
-        stage('Test') { // <<< ЗМІНЕНО ТУТ
+        stage('Test') {
             steps {
                 script {
-                    dir('backend') { // ПОВЕРНУЛИ dir('backend')
+                    dir('backend') {
                         sh 'mvn test'
                         echo "Tests executed successfully."
                     }
@@ -50,10 +52,10 @@ pipeline {
             }
         }
 
-        stage('Package') { // <<< ЗМІНЕНО ТУТ
+        stage('Package') {
             steps {
                 script {
-                    dir('backend') { // ПОВЕРНУЛИ dir('backend')
+                    dir('backend') {
                         sh 'mvn package -DskipTests'
                         echo "Application packaged into JAR."
                         archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
@@ -62,15 +64,12 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') { // <<< ЗМІНЕНО ТУТ
+        stage('Build Docker Image') {
             steps {
                 script {
                     def imageName = "demo6:latest"
 
                     withEnv(["PATH+DOCKER=/usr/bin"]) {
-                        // ЗМІНЕНО: вказуємо Dockerfile та контекст збірки
-                        // Dockerfile знаходиться у db-dockerfile/Dockerfile,
-                        // а JAR-файл буде у backend/target, тому контекст збірки - папка backend.
                         sh "docker build -t ${imageName} -f db-dockerfile/Dockerfile backend"
                     }
                     echo "Docker image ${imageName} built."
