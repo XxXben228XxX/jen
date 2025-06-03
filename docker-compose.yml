@@ -66,9 +66,35 @@ services:
     environment:
       - REACT_APP_API_URL=${REACT_APP_API_URL} # REACT_APP_API_URL буде доступний всередині контейнера
 
+  # ДОДАНО СЕРВІС JENKINS
+  jenkins:
+    container_name: jenkins_server
+    image: jenkins/jenkins:lts
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock # Монтуємо Docker-сокет хоста
+      # Якщо ви на Windows і Docker Desktop, то /var/run/docker.sock - це правильний шлях для Linux Subsystem
+      # Якщо у вас Linux, також використовуйте /var/run/docker.sock
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock # Вказуємо Jenkins, де шукати Docker
+    # Якщо Jenkins потрібно взаємодіяти з іншими сервісами (db, backend, frontend) за їхніми іменами (наприклад, для розгортання),
+    # він також має бути в тій же мережі:
+    # networks:
+    #   - ticket-network
+
 networks:
   ticket-network:
     driver: bridge # Визначаємо загальну мережу для всіх сервісів
 
 volumes:
   mssql_data: {} # Визначаємо пойменований том для постійного зберігання даних MSSQL
+  # ДОДАНО ТОМ ДЛЯ JENKINS
+  jenkins_home:
+  # Якщо ви вже створили цей том вручну (наприклад, 'docker volume create jenkins_home'),
+  # залиште 'external: true'.
+  # В іншому випадку (якщо ви хочете, щоб Docker Compose його створив),
+  # просто залиште 'jenkins_home:' без 'external: true'.
+  # Якщо ви вже маєте Jenkins, то цей том вже існує.
