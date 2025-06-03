@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+  labels:
+    app: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: frontend-demo:latest # Ім'я образу фронт-енду, як в Jenkinsfile
+          imagePullPolicy: Never # В Minikube використовуємо локальні образи, тому Never
+          ports:
+            - containerPort: 80 # Порт, який Nginx слухає всередині контейнера
+          env:
+          # Якщо фронт-енд потребує змінних середовища під час виконання (не під час збірки), додайте тут
+          # Наприклад:
+          # - name: API_BASE_URL
+          #   value: http://demo6-backend-service:8080 # Внутрішній URL бек-енд сервісу в Minikube
