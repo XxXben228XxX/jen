@@ -5,7 +5,7 @@ pipeline {
 
     tools {
         maven 'Maven 3.9.6'
-        jdk 'docker exec -it --user root jenkins_server bash'
+        jdk 'Java 21'
     }
 
     stages {
