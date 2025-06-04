@@ -74,7 +74,8 @@ pipeline {
                 script {
                     def backendImageName = "demo6:latest"
 
-                    withEnv(["PATH+DOCKER=/usr/bin"]) {
+                    // ОНОВЛЕНО: Використання DOCKER_HOST для зв'язку з Docker Desktop через TCP
+                    withEnv(["PATH+DOCKER=/usr/bin", "DOCKER_HOST=tcp://host.docker.internal:2375"]) {
                         // Контекст збірки - корінь ('.')
                         // Dockerfile для бек-енду знаходиться в db-dockerfile/Dockerfile
                         sh "docker build -t ${backendImageName} -f db-dockerfile/Dockerfile ."
@@ -115,7 +116,8 @@ pipeline {
                     // URL бек-енду з Minikube для змінної середовища фронт-енду
                     def reactAppApiUrl = "http://192.168.49.2:30000" // !!! ПЕРЕВІРТЕ ЦЕЙ URL !!!
 
-                    withEnv(["PATH+DOCKER=/usr/bin"]) {
+                    // ОНОВЛЕНО: Використання DOCKER_HOST для зв'язку з Docker Desktop через TCP
+                    withEnv(["PATH+DOCKER=/usr/bin", "DOCKER_HOST=tcp://host.docker.internal:2375"]) {
                         // Контекст збірки - корінь ('.'), оскільки Dockerfile та вихідники фронт-енду там
                         // Dockerfile для фронт-енду знаходиться в корені репозиторію
                         sh "docker build -t ${frontendImageName} -f Dockerfile --build-arg REACT_APP_API_URL=${reactAppApiUrl} ."

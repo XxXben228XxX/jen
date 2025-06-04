@@ -20,12 +20,17 @@ RUN apt-get update && \
     apt-get install -y docker-ce-cli && \
     rm -rf /var/lib/apt/lists/*
 
-# >>> ДОДАЙТЕ ЦЕЙ РЯДОК: Створюємо групу 'docker', якщо її не існує
+# === ПОЧАТОК ЗМІН, ЯКІ ПОТРІБНО ДОДАТИ ===
+
+# Створюємо групу 'docker', якщо її не існує
 RUN groupadd docker || true
 
 # Додаємо Jenkins користувача до групи docker
 # Це дасть користувачу jenkins права на доступ до docker.sock
 RUN usermod -aG docker jenkins
+
+# === КІНЕЦЬ ЗМІН, ЯКІ ПОТРІБНО ДОДАТИ ===
+
 
 # Встановлюємо kubectl
 RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \
