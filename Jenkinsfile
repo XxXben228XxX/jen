@@ -77,7 +77,7 @@ pipeline {
                     withEnv(["PATH+DOCKER=/usr/bin"]) {
                         // Контекст збірки - корінь ('.')
                         // Dockerfile для бек-енду знаходиться в db-dockerfile/Dockerfile
-                        sh "sudo docker build -t ${backendImageName} -f db-dockerfile/Dockerfile ."
+                        sh "docker build -t ${backendImageName} -f db-dockerfile/Dockerfile ."
                     }
                     echo "Backend Docker image ${backendImageName} built."
                 }
@@ -118,7 +118,7 @@ pipeline {
                     withEnv(["PATH+DOCKER=/usr/bin"]) {
                         // Контекст збірки - корінь ('.'), оскільки Dockerfile та вихідники фронт-енду там
                         // Dockerfile для фронт-енду знаходиться в корені репозиторію
-                        sh "sudo docker build -t ${frontendImageName} -f Dockerfile --build-arg REACT_APP_API_URL=${reactAppApiUrl} ."
+                        sh "docker build -t ${frontendImageName} -f Dockerfile --build-arg REACT_APP_API_URL=${reactAppApiUrl} ."
                     }
                     echo "Frontend Docker image ${frontendImageName} built."
                 }
