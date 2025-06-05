@@ -20,22 +20,28 @@ RUN apt-get update && \
     apt-get install -y docker-ce-cli && \
     rm -rf /var/lib/apt/lists/*
 
-# === ПОЧАТОК ЗМІН, ЯКІ ПОТРІБНО ДОДАТИ ===
-
 # Створюємо групу 'docker', якщо її не існує
-RUN groupadd docker || true
-
-# Додаємо Jenkins користувача до групи docker
 # Це дасть користувачу jenkins права на доступ до docker.sock
+RUN groupadd docker || true
+# Додаємо Jenkins користувача до групи docker
 RUN usermod -aG docker jenkins
-
-# === КІНЕЦЬ ЗМІН, ЯКІ ПОТРІБНО ДОДАТИ ===
 
 
 # Встановлюємо kubectl
 RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \
     install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl && \
     rm kubectl
+
+# === ПОЧАТОК ЗМІН ВІД AI - ДОДАЄМО MINIKUBE ===
+
+# Встановлюємо minikube
+# Використовуємо версію v1.36.0, яка була у вашому kubeconfig
+ARG MINIKUBE_VERSION="v1.36.0"
+RUN curl -Lo minikube https://github.com/kubernetes/minikube/releases/download/${MINIKUBE_VERSION}/minikube-linux-amd64 && \
+    chmod +x minikube && \
+    mv minikube /usr/local/bin/
+
+# === КІНЕЦЬ ЗМІН ВІД AI ===
 
 # Повертаємося до користувача jenkins
 USER jenkins

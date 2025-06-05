@@ -70,28 +70,31 @@ pipeline {
         }
 
         stage('Build Backend Docker Image') {
-            steps {
-                script {
-                    withEnv(['PATH+BUILDTOOLS=/usr/local/bin']) {
-                        // Встановлюємо Docker-середовище на Docker-демон Minikube
-                        def dockerEnv = sh(script: 'minikube docker-env', returnStdout: true).trim()
-                        def envVars = []
-                        dockerEnv.split('\\n').each { line ->
-                            if (line.startsWith('export')) {
-                                def parts = line.split(' ')
-                                if (parts.size() >= 2) {
-                                    envVars << parts[1]
+                    steps {
+                        script {
+                            withEnv([
+                                "PATH+BUILDTOOLS=/usr/local/bin",
+                                "PATH+MINIKUBE=/usr/local/bin/minikube_exec" // <<< ДОДАЙТЕ ЦЕЙ РЯДОК!
+                            ]) {
+                                // Встановлюємо Docker-середовище на Docker-демон Minikube
+                                def dockerEnv = sh(script: 'minikube docker-env', returnStdout: true).trim()
+                                def envVars = []
+                                dockerEnv.split('\\n').each { line ->
+                                    if (line.startsWith('export')) {
+                                        def parts = line.split(' ')
+                                        if (parts.size() >= 2) {
+                                            envVars << parts[1]
+                                        }
+                                    }
+                                }
+
+                                withEnv(envVars) {
+                                    sh 'docker build -t demo6:latest -f db-dockerfile/Dockerfile .'
                                 }
                             }
                         }
-
-                        withEnv(envVars) {
-                            sh 'docker build -t demo6:latest -f db-dockerfile/Dockerfile .'
-                        }
                     }
                 }
-            }
-        }
 
         stage('Deploy Backend to Minikube') {
             steps {
@@ -121,27 +124,30 @@ pipeline {
         // --- НОВІ ЕТАПИ ДЛЯ ФРОНТ-ЕНДУ ---
 
         stage('Build Frontend Docker Image') {
-            steps {
-                script {
-                    withEnv(['PATH+BUILDTOOLS=/usr/local/bin']) {
-                        def dockerEnv = sh(script: 'minikube docker-env', returnStdout: true).trim()
-                        def envVars = []
-                        dockerEnv.split('\\n').each { line ->
-                            if (line.startsWith('export')) {
-                                def parts = line.split(' ')
-                                if (parts.size() >= 2) {
-                                    envVars << parts[1]
+                    steps {
+                        script {
+                            withEnv([
+                                "PATH+BUILDTOOLS=/usr/local/bin",
+                                "PATH+MINIKUBE=/usr/local/bin/minikube_exec" // <<< ДОДАЙТЕ ЦЕЙ РЯДОК!
+                            ]) {
+                                def dockerEnv = sh(script: 'minikube docker-env', returnStdout: true).trim()
+                                def envVars = []
+                                dockerEnv.split('\\n').each { line ->
+                                    if (line.startsWith('export')) {
+                                        def parts = line.split(' ')
+                                        if (parts.size() >= 2) {
+                                            envVars << parts[1]
+                                        }
+                                    }
+                                }
+
+                                withEnv(envVars) {
+                                    sh 'docker build -t frontend-demo:latest -f frontend/Dockerfile .'
                                 }
                             }
                         }
-
-                        withEnv(envVars) {
-                            sh 'docker build -t frontend-demo:latest -f frontend/Dockerfile .'
-                        }
                     }
                 }
-            }
-        }
 
         stage('Deploy Frontend to Minikube') {
             steps {
