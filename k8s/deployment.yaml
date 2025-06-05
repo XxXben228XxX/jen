@@ -29,5 +29,5 @@ spec:
               value: sa
             - name: SPRING_DATASOURCE_PASSWORD
               value: TestP@ssw0rd123! # Ваш пароль, як у docker-compose.yml
-      # Вказуємо policy для завантаження образу. Якщо образ локальний, використовуємо IfNotPresent або Never
-      imagePullPolicy: IfNotPresent # Важливо для локальних образів Minikube
+          imagePullPolicy: IfNotPresent # <<< ЗМІНЕНО РОЗТАШУВАННЯ
+      # imagePullPolicy: IfNotPresent # <<< ЦЕЙ РЯДОК ПОВИНЕН БУТИ ВИДАЛЕНИЙ ЗВІДСИ

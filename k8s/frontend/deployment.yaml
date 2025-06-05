@@ -17,7 +17,6 @@ spec:
       containers:
         - name: frontend
           image: frontend-demo:latest # Ім'я образу фронт-енду, як в Jenkinsfile
-          imagePullPolicy: Never # В Minikube використовуємо локальні образи, тому Never
           ports:
             - containerPort: 80 # Порт, який Nginx слухає всередині контейнера
           env:
@@ -25,3 +24,5 @@ spec:
           # Наприклад:
           # - name: API_BASE_URL
           #   value: http://demo6-backend-service:8080 # Внутрішній URL бек-енд сервісу в Minikube
+          imagePullPolicy: Never # <<< ЦЕЙ РЯДОК МАЄ БУТИ ТУТ, ЗІ ЗМІНЕНИМ ВІДСТУПОМ!
+      # imagePullPolicy: Never # <<< А ЦЕЙ РЯДОК ПОВИНЕН БУТИ ВИДАЛЕНИЙ ЗВІДСИ!
