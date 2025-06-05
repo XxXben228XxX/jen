@@ -72,94 +72,101 @@ pipeline {
         stage('Build Backend Docker Image') {
             steps {
                 script {
-                    def backendImageName = "demo6:latest"
+                    withEnv(['PATH+BUILDTOOLS=/usr/local/bin']) {
+                        // Встановлюємо Docker-середовище на Docker-демон Minikube
+                        def dockerEnv = sh(script: 'minikube docker-env', returnStdout: true).trim()
+                        def envVars = []
+                        dockerEnv.split('\\n').each { line ->
+                            if (line.startsWith('export')) {
+                                def parts = line.split(' ')
+                                if (parts.size() >= 2) {
+                                    envVars << parts[1]
+                                }
+                            }
+                        }
 
-                    // ОНОВЛЕНО: Використання DOCKER_HOST для зв'язку з Docker Desktop через TCP
-                    withEnv(["PATH+DOCKER=/usr/bin", "DOCKER_HOST=tcp://host.docker.internal:2375"]) {
-                        // Контекст збірки - корінь ('.')
-                        // Dockerfile для бек-енду знаходиться в db-dockerfile/Dockerfile
-                        sh "docker build -t ${backendImageName} -f db-dockerfile/Dockerfile ."
+                        withEnv(envVars) {
+                            sh 'docker build -t demo6:latest -f db-dockerfile/Dockerfile .'
+                        }
                     }
-                    echo "Backend Docker image ${backendImageName} built."
                 }
             }
         }
 
         stage('Deploy Backend to Minikube') {
-                    steps {
-                        script {
-                            echo "Applying Backend Kubernetes manifests..."
-                            // *** ВАЖЛИВО: ДОДАЙТЕ ОБИДВІ ЗМІННІ СЕРЕДОВИЩА ТУТ ***
-                            withEnv([
-                                "PATH+KUBECTL=/usr/local/bin", // Шлях до kubectl
-                                "KUBECONFIG=/var/jenkins_home/.kube/config" // <<< ЦЕЙ РЯДОК БУВ ПРОПУЩЕНИЙ!
-                            ]) {
-                                sh 'kubectl apply -f k8s/deployment.yaml'
-                                sh 'kubectl apply -f k8s/service.yaml'
+            steps {
+                script {
+                    echo "Applying Backend Kubernetes manifests..."
+                    withEnv([
+                        "PATH+KUBECTL=/usr/local/bin",
+                        "KUBECONFIG=/var/jenkins_home/.kube/config"
+                    ]) {
+                        sh 'kubectl apply -f k8s/deployment.yaml'
+                        sh 'kubectl apply -f k8s/service.yaml'
 
-                                echo "Waiting for backend deployment to roll out..."
-                                timeout(time: 5, unit: 'MINUTES') {
-                                    sh 'kubectl rollout status deployment/demo6-backend-deployment --watch=true'
-                                }
-                                echo "Backend deployed to Minikube successfully."
-
-                                echo "Access your backend application at: "
-                                // minikube service --url може знадобитися DOCKER_HOST, додамо його на випадок, якщо це потрібно
-                                withEnv(['DOCKER_HOST=tcp://host.docker.internal:2375']) {
-                                   sh 'minikube service demo6-backend-service --url'
-                                }
-                            }
+                        echo "Waiting for backend deployment to roll out..."
+                        timeout(time: 5, unit: 'MINUTES') {
+                            sh 'kubectl rollout status deployment/demo6-backend-deployment --watch=true'
                         }
+                        echo "Backend deployed to Minikube successfully."
+
+                        echo "Access your backend application at: "
+                        // DOCKER_HOST не потрібен для minikube service --url
+                        sh 'minikube service demo6-backend-service --url'
                     }
                 }
+            }
+        }
 
         // --- НОВІ ЕТАПИ ДЛЯ ФРОНТ-ЕНДУ ---
 
         stage('Build Frontend Docker Image') {
             steps {
                 script {
-                    def frontendImageName = "frontend-demo:latest"
-                    // URL бек-енду з Minikube для змінної середовища фронт-енду
-                    def reactAppApiUrl = "http://192.168.49.2:30000" // !!! ПЕРЕВІРТЕ ЦЕЙ URL !!!
+                    withEnv(['PATH+BUILDTOOLS=/usr/local/bin']) {
+                        def dockerEnv = sh(script: 'minikube docker-env', returnStdout: true).trim()
+                        def envVars = []
+                        dockerEnv.split('\\n').each { line ->
+                            if (line.startsWith('export')) {
+                                def parts = line.split(' ')
+                                if (parts.size() >= 2) {
+                                    envVars << parts[1]
+                                }
+                            }
+                        }
 
-                    // ОНОВЛЕНО: Використання DOCKER_HOST для зв'язку з Docker Desktop через TCP
-                    withEnv(["PATH+DOCKER=/usr/bin", "DOCKER_HOST=tcp://host.docker.internal:2375"]) {
-                        // Контекст збірки - корінь ('.'), оскільки Dockerfile та вихідники фронт-енду там
-                        // Dockerfile для фронт-енду знаходиться в корені репозиторію
-                        sh "docker build -t ${frontendImageName} -f Dockerfile --build-arg REACT_APP_API_URL=${reactAppApiUrl} ."
+                        withEnv(envVars) {
+                            sh 'docker build -t frontend-demo:latest -f frontend/Dockerfile .'
+                        }
                     }
-                    echo "Frontend Docker image ${frontendImageName} built."
                 }
             }
         }
 
         stage('Deploy Frontend to Minikube') {
-                    steps {
-                        script {
-                            echo "Applying Frontend Kubernetes manifests..."
-                            // *** ВАЖЛИВО: ДОДАЙТЕ ОБИДВІ ЗМІННІ СЕРЕДОВИЩА ТУТ ***
-                            withEnv([
-                                "PATH+KUBECTL=/usr/local/bin", // Шлях до kubectl
-                                "KUBECONFIG=/var/jenkins_home/.kube/config"   // <<< ЦЕЙ РЯДОК БУВ ПРОПУЩЕНИЙ!
-                            ]) {
-                                sh 'kubectl apply -f k8s/frontend/deployment.yaml'
-                                sh 'kubectl apply -f k8s/frontend/service.yaml'
+            steps {
+                script {
+                    echo "Applying Frontend Kubernetes manifests..."
+                    withEnv([
+                        "PATH+KUBECTL=/usr/local/bin",
+                        "KUBECONFIG=/var/jenkins_home/.kube/config"
+                    ]) {
+                        sh 'kubectl apply -f k8s/frontend/deployment.yaml'
+                        sh 'kubectl apply -f k8s/frontend/service.yaml'
 
-                                echo "Waiting for frontend deployment to roll out..."
-                                timeout(time: 5, unit: 'MINUTES') {
-                                    sh 'kubectl rollout status deployment/frontend-deployment --watch=true'
-                                }
-                                echo "Frontend deployed to Minikube successfully."
-
-                                echo "Access your frontend application at: "
-                                // minikube service --url може знадобитися DOCKER_HOST, додамо його на випадок, якщо це потрібно
-                                withEnv(['DOCKER_HOST=tcp://host.docker.internal:2375']) {
-                                   sh 'minikube service frontend-service --url'
-                                }
-                            }
+                        echo "Waiting for frontend deployment to roll out..."
+                        timeout(time: 5, unit: 'MINUTES') {
+                            sh 'kubectl rollout status deployment/frontend-deployment --watch=true'
                         }
+                        echo "Frontend deployed to Minikube successfully."
+
+                        echo "Access your frontend application at: "
+                        // DOCKER_HOST не потрібен для minikube service --url
+                        sh 'minikube service frontend-service --url'
                     }
                 }
+            }
+        }
     }
 
     post {
