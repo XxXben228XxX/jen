@@ -3,18 +3,32 @@
 pipeline {
     agent any
 
+    options {
+        // !!! НОВИЙ РЯДОК: Запобігає автоматичному клонуванню Jenkins
+        skipDefaultCheckout()
+    }
+
     tools {
         maven 'Maven 3.9.6'
         jdk 'Java 21'
     }
 
     stages {
-        stage('Checkout') {
+        stage('Cleanup and Checkout') { // Об'єднуємо очистку та клонування
             steps {
+                cleanWs() // Очищує робочий простір перед клонуванням
                 git branch: 'main', url: 'https://github.com/XxXben228XxX/jen.git'
                 echo "Repository checked out."
             }
         }
+
+        // !!! ЦЕЙ ЕТАП ВИДАЛЕНО: Він дублювався з 'Cleanup and Checkout'
+        // stage('Checkout') {
+        //     steps {
+        //         git branch: 'main', url: 'https://github.com/XxXben228XxX/jen.git'
+        //         echo "Repository checked out."
+        //     }
+        // }
 
         stage('Debug Workspace') {
             steps {
