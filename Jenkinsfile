@@ -83,28 +83,33 @@ pipeline {
         }
 
         stage('Build Backend Docker Image') {
-                    steps {
-                        script {
-                            echo "Starting Docker daemon inside Jenkins container for debugging..."
-                            // ЗМІНА ТУТ: ДОДАНО 'sudo'
-                            sh 'sleep 5'
+                            steps {
+                                script {
+                                    echo "Starting Docker daemon inside Jenkins container for debugging..."
+                                    sh 'sleep 5'
 
-                            def dockerDaemonReady = sh(script: 'timeout 60 bash -c "while ! docker info >/dev/null 2>&1; do sleep 1; done"', returnStatus: true)
+                                    // --- ДОДАЙТЕ ЦІ НОВІ РЯДКИ ДЛЯ ДІАГНОСТИКИ ---
+                                    echo "Checking Docker socket permissions and Jenkins user info..."
+                                    sh 'ls -l /var/run/docker.sock || echo "Docker socket not found or permission denied to list"'
+                                    sh 'id' // Покаже UID, GID та групи користувача Jenkins
+                                    // --- КІНЕЦЬ НОВИХ РЯДКІВ ---
 
-                            echo "--- DOCKERD LOGS START ---"
-                            sh 'cat /tmp/dockerd.log'
-                            echo "--- DOCKERD LOGS END ---"
+                                    def dockerDaemonReady = sh(script: 'timeout 60 bash -c "while ! docker info >/dev/null 2>&1; do sleep 1; done"', returnStatus: true)
 
-                            if (dockerDaemonReady == 0) {
-                                echo "Docker daemon is running."
-                                sh 'docker build -t demo6:latest -f db-dockerfile/Dockerfile .'
-                                echo "Backend Docker image built successfully."
-                            } else {
-                                error("Docker daemon did not start in time. Check DOCKERD LOGS above for details.")
+                                    echo "--- DOCKERD LOGS START ---"
+                                    sh 'cat /tmp/dockerd.log' // Цей рядок все ще буде видавати помилку "No such file", це нормально
+                                    echo "--- DOCKERD LOGS END ---"
+
+                                    if (dockerDaemonReady == 0) {
+                                        echo "Docker daemon is running."
+                                        sh 'docker build -t demo6:latest -f db-dockerfile/Dockerfile .'
+                                        echo "Backend Docker image built successfully."
+                                    } else {
+                                        error("Docker daemon did not start in time. Check DOCKERD LOGS above for details.")
+                                    }
+                                }
                             }
                         }
-                    }
-                }
 
         stage('Deploy Backend to Minikube') {
                     steps {
@@ -151,28 +156,33 @@ pipeline {
         // --- ЕТАПИ ДЛЯ ФРОНТ-ЕНДУ ---
 
         stage('Build Frontend Docker Image') {
-                    steps {
-                        script {
-                            echo "Starting Docker daemon inside Jenkins container for debugging..."
-                            // ЗМІНА ТУТ: ДОДАНО 'sudo'
-                            sh 'sleep 5'
+                            steps {
+                                script {
+                                    echo "Starting Docker daemon inside Jenkins container for debugging..."
+                                    sh 'sleep 5'
 
-                            def dockerDaemonReady = sh(script: 'timeout 60 bash -c "while ! docker info >/dev/null 2>&1; do sleep 1; done"', returnStatus: true)
+                                    // --- ДОДАЙТЕ ЦІ НОВІ РЯДКИ ДЛЯ ДІАГНОСТИКИ ---
+                                    echo "Checking Docker socket permissions and Jenkins user info (Frontend)..."
+                                    sh 'ls -l /var/run/docker.sock || echo "Docker socket not found or permission denied to list"'
+                                    sh 'id'
+                                    // --- КІНЕЦЬ НОВИХ РЯДКІВ ---
 
-                            echo "--- DOCKERD LOGS START (Frontend) ---"
-                            sh 'cat /tmp/dockerd_frontend.log'
-                            echo "--- DOCKERD LOGS END (Frontend) ---"
+                                    def dockerDaemonReady = sh(script: 'timeout 60 bash -c "while ! docker info >/dev/null 2>&1; do sleep 1; done"', returnStatus: true)
 
-                            if (dockerDaemonReady == 0) {
-                                echo "Docker daemon is running."
-                                sh 'docker build -t frontend-demo:latest -f frontend/Dockerfile .'
-                                echo "Frontend Docker image built successfully."
-                            } else {
-                                error("Docker daemon did not start in time. Check DOCKERD LOGS above for details.")
+                                    echo "--- DOCKERD LOGS START (Frontend) ---"
+                                    sh 'cat /tmp/dockerd_frontend.log'
+                                    echo "--- DOCKERD LOGS END (Frontend) ---"
+
+                                    if (dockerDaemonReady == 0) {
+                                        echo "Docker daemon is running."
+                                        sh 'docker build -t frontend-demo:latest -f frontend/Dockerfile .'
+                                        echo "Frontend Docker image built successfully."
+                                    } else {
+                                        error("Docker daemon did not start in time. Check DOCKERD LOGS above for details.")
+                                    }
+                                }
                             }
                         }
-                    }
-                }
 
         stage('Deploy Frontend to Minikube') {
                             steps {
