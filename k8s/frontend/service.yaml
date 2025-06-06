@@ -7,9 +7,9 @@ metadata:
 spec:
   selector:
     app: frontend
-  type: NodePort # Використовуємо NodePort для доступу ззовні Minikube
+  type: NodePort
   ports:
     - protocol: TCP
-      port: 80       # Порт, який сервіс відкриває всередині кластера
-      targetPort: 80 # Порт контейнера, на який перенаправляє сервіс
-      nodePort: 30001 # Можна вказати конкретний NodePort (30000-32767), або Minikube вибере сам
+      port: 3000       # <-- Змінено на 3000
+      targetPort: 3000 # <-- Змінено на 3000
+      nodePort: 30001

@@ -29,5 +29,4 @@ spec:
               value: sa
             - name: SPRING_DATASOURCE_PASSWORD
               value: TestP@ssw0rd123! # Ваш пароль, як у docker-compose.yml
-          imagePullPolicy: IfNotPresent # <<< ЗМІНЕНО РОЗТАШУВАННЯ
-      # imagePullPolicy: IfNotPresent # <<< ЦЕЙ РЯДОК ПОВИНЕН БУТИ ВИДАЛЕНИЙ ЗВІДСИ
+          imagePullPolicy: IfNotPresent # <<< Правильне розташування, залиште його тут.

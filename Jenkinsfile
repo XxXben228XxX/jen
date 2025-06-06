@@ -1,5 +1,3 @@
-// Jenkinsfile - Повний CI/CD Pipeline для Spring Boot та React з Minikube Deployment
-
 pipeline {
     agent any
 
@@ -134,7 +132,7 @@ pipeline {
                         // --- КІНЕЦЬ НОВИХ КОМАНД ---
 
                         echo "Ensuring clean Minikube state before start..."
-                        sh 'minikube delete || true' // <-- Додано minikube delete для очищення
+                        sh 'minikube delete || true'
 
                         echo "Starting Minikube cluster..."
                         sh 'minikube start --driver=docker --v=7 --alsologtostderr'
@@ -163,8 +161,18 @@ pipeline {
                         }
                         echo "Backend deployed to Minikube successfully."
 
-                        echo "Access your backend application at: "
-                        sh 'minikube service demo6-backend-service --url'
+                        // --- ДОДАНО: Отримання IP та NodePort для бекенду ---
+                        echo "Getting Minikube IP..."
+                        def minikubeIp = sh(script: 'minikube ip', returnStdout: true).trim()
+                        echo "Minikube IP: ${minikubeIp}"
+
+                        echo "Getting Backend NodePort..."
+                        def backendNodePort = sh(script: "kubectl get service demo6-backend-service -o jsonpath='{.spec.ports[0].nodePort}'", returnStdout: true).trim()
+                        echo "Backend NodePort: ${backendNodePort}"
+
+                        echo "Backend application should be accessible at: http://${minikubeIp}:${backendNodePort}"
+                        // --- КІНЕЦЬ ДОДАНИХ РЯДКІВ ---
+                        // sh 'minikube service demo6-backend-service --url' // Оригінальний рядок, тепер його можна видалити або закоментувати
                     }
                 }
             }
@@ -228,8 +236,8 @@ pipeline {
                         sh 'ls -l /var/jenkins_home/.minikube'
                         // --- КІНЕЦЬ НОВИХ КОМАНД ---
 
-                        echo "Ensuring clean Minikube state before start..." // <-- Додано для ясності
-                        sh 'minikube delete || true' // <-- Додано minikube delete для очищення фронтенду
+                        echo "Ensuring clean Minikube state before start..."
+                        sh 'minikube delete || true'
 
                         echo "Starting Minikube cluster..."
                         sh 'minikube start --driver=docker --v=7 --alsologtostderr'
@@ -258,8 +266,18 @@ pipeline {
                         }
                         echo "Frontend deployed to Minikube successfully."
 
-                        echo "Access your frontend application at: "
-                        sh 'minikube service frontend-service --url'
+                        // --- ДОДАНО: Отримання IP та NodePort для фронтенду ---
+                        echo "Getting Minikube IP..."
+                        def minikubeIp = sh(script: 'minikube ip', returnStdout: true).trim()
+                        echo "Minikube IP: ${minikubeIp}"
+
+                        echo "Getting Frontend NodePort..."
+                        def frontendNodePort = sh(script: "kubectl get service frontend-service -o jsonpath='{.spec.ports[0].nodePort}'", returnStdout: true).trim()
+                        echo "Frontend NodePort: ${frontendNodePort}"
+
+                        echo "Frontend application should be accessible at: http://${minikubeIp}:${frontendNodePort}"
+                        // --- КІНЕЦЬ ДОДАНИХ РЯДКІВ ---
+                        // sh 'minikube service frontend-service --url' // Оригінальний рядок, тепер його можна видалити або закоментувати
                     }
                 }
             }
