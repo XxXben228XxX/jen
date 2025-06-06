@@ -128,6 +128,10 @@ pipeline {
                                     withEnv([
                                         "PATH+KUBECTL=/usr/local/bin",
                                         "KUBECONFIG=/var/jenkins_home/.kube/config" // Шлях до конфігураційного файлу всередині контейнера
+                                        // --- ДОДАЙТЕ ЦІ РЯДКИ ---
+                                                                                "DOCKER_HOST=tcp://host.docker.internal:2375",
+                                                                                "MINIKUBE_IN_CONTAINER=true"
+                                                                                // --- КІНЕЦЬ ДОДАНИХ РЯДКІВ ---
                                     ]) {
                                         // --- НОВІ КОМАНДИ ДЛЯ ВИПРАВЛЕННЯ ДОЗВОЛІВ MINIKUBE ---
                                         echo "Setting permissions for .minikube directory..."
@@ -221,6 +225,10 @@ pipeline {
                                             withEnv([
                                                 "PATH+KUBECTL=/usr/local/bin",
                                                 "KUBECONFIG=/var/jenkins_home/.kube/config"
+                                                // --- ДОДАЙТЕ ЦІ РЯДКИ ---
+                                                                                        "DOCKER_HOST=tcp://host.docker.internal:2375",
+                                                                                        "MINIKUBE_IN_CONTAINER=true"
+                                                                                        // --- КІНЕЦЬ ДОДАНИХ РЯДКІВ ---
                                             ]) {
                                                 // --- НОВІ КОМАНДИ ДЛЯ ВИПРАВЛЕННЯ ДОЗВОЛІВ MINIKUBE ---
                                                 echo "Setting permissions for .minikube directory (Frontend)..."
