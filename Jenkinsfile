@@ -92,33 +92,28 @@ pipeline {
                                     sh 'ls -l /var/run/docker.sock || echo "Docker socket not found or permission denied to list"'
                                     sh 'id'
 
-                                    // --- ДОДАЙТЕ ЦЕЙ РЯДОК ---
-                                    // Зміна групової власності сокету на 996 (група 'docker'), щоб користувач 'jenkins' мав доступ.
-                                    // 'sudo' може знадобитися, оскільки власник сокету root.
                                     sh 'sudo chown root:996 /var/run/docker.sock || echo "Failed to change docker.sock group. Trying chmod..."'
-                                    sh 'ls -l /var/run/docker.sock' // Перевіряємо дозволи після chown
-
-                                    // --- Додайте цей рядок як запасний варіант на випадок, якщо chown не спрацює ---
-                                    // Надання дозволу на запис для всіх, хто має доступ до сокету.
-                                    // Це менш безпечно, але допомагає для діагностики та тимчасового вирішення.
+                                    sh 'ls -l /var/run/docker.sock'
                                     sh 'sudo chmod 666 /var/run/docker.sock || echo "Failed to chmod docker.sock"'
-                                    sh 'ls -l /var/run/docker.sock' // Перевіряємо дозволи після chmod
-                                    // --- КІНЕЦЬ ДОДАНИХ РЯДКІВ ---
+                                    sh 'ls -l /var/run/docker.sock'
 
+                                    // --- ЗМІНІТЬ ЦЕЙ БЛОК ---
+                                    echo "Attempting docker info directly..."
+                                    // Виконуємо 'docker info' і захоплюємо весь вивід (включаючи помилки)
+                                    def dockerInfoResult = sh(script: 'docker info', returnStatus: true, returnStdout: true, returnStderr: true)
+                                    def dockerInfoOutput = dockerInfoResult.stdout + dockerInfoResult.stderr
+                                    def dockerInfoExitCode = dockerInfoResult.status
 
-                                    def dockerDaemonReady = sh(script: 'timeout 60 bash -c "while ! docker info >/dev/null 2>&1; do sleep 1; done"', returnStatus: true)
+                                    echo "Docker Info Output:\n${dockerInfoOutput}"
 
-                                    echo "--- DOCKERD LOGS START ---"
-                                    sh 'cat /tmp/dockerd.log'
-                                    echo "--- DOCKERD LOGS END ---"
-
-                                    if (dockerDaemonReady == 0) {
-                                        echo "Docker daemon is running."
+                                    if (dockerInfoExitCode == 0) {
+                                        echo "Docker daemon is accessible."
                                         sh 'docker build -t demo6:latest -f db-dockerfile/Dockerfile .'
                                         echo "Backend Docker image built successfully."
                                     } else {
-                                        error("Docker daemon did not start in time. Check DOCKERD LOGS above for details.")
+                                        error("Docker daemon is NOT accessible. Docker info exited with code ${dockerInfoExitCode}. Check Docker Info Output above for details.")
                                     }
+                                    // --- КІНЕЦЬ ЗМІНЕННЯ БЛОКУ ---
                                 }
                             }
                         }
@@ -177,26 +172,24 @@ pipeline {
                                     sh 'ls -l /var/run/docker.sock || echo "Docker socket not found or permission denied to list"'
                                     sh 'id'
 
-                                    // --- ДОДАЙТЕ ЦІ РЯДКИ ---
                                     sh 'sudo chown root:996 /var/run/docker.sock || echo "Failed to change docker.sock group. Trying chmod..."'
                                     sh 'ls -l /var/run/docker.sock'
                                     sh 'sudo chmod 666 /var/run/docker.sock || echo "Failed to chmod docker.sock"'
                                     sh 'ls -l /var/run/docker.sock'
-                                    // --- КІНЕЦЬ ДОДАНИХ РЯДКІВ ---
 
-                                    def dockerDaemonReady = sh(script: 'timeout 60 bash -c "while ! docker info >/dev/null 2>&1; do sleep 1; done"', returnStatus: true)
+                                    // --- ЗМІНІТЬ ЦЕЙ БЛОК ---
+                                    echo "Attempting docker info directly..."
+                                    def dockerInfoResult = sh(script: 'docker info', returnStatus: true, returnStdout: true, returnStderr: true)
+                                    def dockerInfoOutput = dockerInfoResult.stdout + dockerInfoResult.stderr
 
-                                    echo "--- DOCKERD LOGS START (Frontend) ---"
-                                    sh 'cat /tmp/dockerd_frontend.log'
-                                    echo "--- DOCKERD LOGS END (Frontend) ---"
-
-                                    if (dockerDaemonReady == 0) {
+                                    if (dockerInfoResult.status == 0) {
                                         echo "Docker daemon is running."
                                         sh 'docker build -t frontend-demo:latest -f frontend/Dockerfile .'
                                         echo "Frontend Docker image built successfully."
                                     } else {
                                         error("Docker daemon did not start in time. Check DOCKERD LOGS above for details.")
                                     }
+                                    // --- КІНЕЦЬ ЗМІНЕННЯ БЛОКУ ---
                                 }
                             }
                         }
