@@ -87,7 +87,6 @@ pipeline {
                         script {
                             echo "Starting Docker daemon inside Jenkins container for debugging..."
                             // ЗМІНА ТУТ: ДОДАНО 'sudo'
-                            sh 'sudo dockerd --debug > /tmp/dockerd.log 2>&1 &'
                             sh 'sleep 5'
 
                             def dockerDaemonReady = sh(script: 'timeout 60 bash -c "while ! docker info >/dev/null 2>&1; do sleep 1; done"', returnStatus: true)
@@ -156,7 +155,6 @@ pipeline {
                         script {
                             echo "Starting Docker daemon inside Jenkins container for debugging..."
                             // ЗМІНА ТУТ: ДОДАНО 'sudo'
-                            sh 'sudo dockerd --debug > /tmp/dockerd_frontend.log 2>&1 &'
                             sh 'sleep 5'
 
                             def dockerDaemonReady = sh(script: 'timeout 60 bash -c "while ! docker info >/dev/null 2>&1; do sleep 1; done"', returnStatus: true)
