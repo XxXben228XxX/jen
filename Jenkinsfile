@@ -42,7 +42,6 @@ pipeline {
             steps {
                 script {
                     withEnv(["PATH+MAVEN=${tool 'Maven 3.9.6'}/bin"]) {
-                        // Maven працює з pom.xml у корені
                         sh 'mvn clean install -DskipTests'
                         echo "Backend project built successfully."
                     }
@@ -53,7 +52,7 @@ pipeline {
         stage('Test Backend') {
             steps {
                 script {
-                    sh 'mvn test' // Все ще буде "No tests to run"
+                    sh 'mvn test'
                     echo "Backend tests executed successfully."
                 }
             }
@@ -70,40 +69,28 @@ pipeline {
         }
 
         stage('Build Backend Docker Image') {
-                    steps {
-                        script {
-                            withEnv([
-                                "PATH+BUILDTOOLS=/usr/local/bin",
-                                "PATH+MINIKUBE=/usr/local/bin/minikube_exec" // <<< ДОДАЙТЕ ЦЕЙ РЯДОК!
-                            ]) {
-                                // Встановлюємо Docker-середовище на Docker-демон Minikube
-                                def dockerEnv = sh(script: 'minikube docker-env', returnStdout: true).trim()
-                                def envVars = []
-                                dockerEnv.split('\\n').each { line ->
-                                    if (line.startsWith('export')) {
-                                        def parts = line.split(' ')
-                                        if (parts.size() >= 2) {
-                                            envVars << parts[1]
-                                        }
-                                    }
-                                }
-
-                                withEnv(envVars) {
-                                    sh 'docker build -t demo6:latest -f db-dockerfile/Dockerfile .'
-                                }
-                            }
-                        }
-                    }
+            steps {
+                script {
+                    // Змінено: Видалено minikube docker-env. Docker build тепер використовуватиме Docker демон хоста.
+                    sh 'docker build -t demo6:latest -f db-dockerfile/Dockerfile .'
+                    echo "Backend Docker image built successfully."
                 }
+            }
+        }
 
         stage('Deploy Backend to Minikube') {
             steps {
                 script {
-                    echo "Applying Backend Kubernetes manifests..."
                     withEnv([
                         "PATH+KUBECTL=/usr/local/bin",
-                        "KUBECONFIG=/var/jenkins_home/.kube/config"
+                        "KUBECONFIG=/var/jenkins_home/.kube/config" // Це монтований файл конфігурації Minikube
                     ]) {
+                        // Переносимо образ з Docker-демона хоста до внутрішнього Docker-демона Minikube
+                        // Ця команда повинна працювати, оскільки Minikube запущено і kubectl його бачить.
+                        sh 'minikube image load demo6:latest'
+                        echo "Backend image loaded into Minikube."
+
+                        echo "Applying Backend Kubernetes manifests..."
                         sh 'kubectl apply -f k8s/deployment.yaml'
                         sh 'kubectl apply -f k8s/service.yaml'
 
@@ -114,7 +101,6 @@ pipeline {
                         echo "Backend deployed to Minikube successfully."
 
                         echo "Access your backend application at: "
-                        // DOCKER_HOST не потрібен для minikube service --url
                         sh 'minikube service demo6-backend-service --url'
                     }
                 }
@@ -124,39 +110,27 @@ pipeline {
         // --- НОВІ ЕТАПИ ДЛЯ ФРОНТ-ЕНДУ ---
 
         stage('Build Frontend Docker Image') {
-                    steps {
-                        script {
-                            withEnv([
-                                "PATH+BUILDTOOLS=/usr/local/bin",
-                                "PATH+MINIKUBE=/usr/local/bin/minikube_exec" // <<< ДОДАЙТЕ ЦЕЙ РЯДОК!
-                            ]) {
-                                def dockerEnv = sh(script: 'minikube docker-env', returnStdout: true).trim()
-                                def envVars = []
-                                dockerEnv.split('\\n').each { line ->
-                                    if (line.startsWith('export')) {
-                                        def parts = line.split(' ')
-                                        if (parts.size() >= 2) {
-                                            envVars << parts[1]
-                                        }
-                                    }
-                                }
-
-                                withEnv(envVars) {
-                                    sh 'docker build -t frontend-demo:latest -f frontend/Dockerfile .'
-                                }
-                            }
-                        }
-                    }
+            steps {
+                script {
+                    // Змінено: Видалено minikube docker-env. Docker build тепер використовуватиме Docker демон хоста.
+                    sh 'docker build -t frontend-demo:latest -f frontend/Dockerfile .'
+                    echo "Frontend Docker image built successfully."
                 }
+            }
+        }
 
         stage('Deploy Frontend to Minikube') {
             steps {
                 script {
-                    echo "Applying Frontend Kubernetes manifests..."
                     withEnv([
                         "PATH+KUBECTL=/usr/local/bin",
-                        "KUBECONFIG=/var/jenkins_home/.kube/config"
+                        "KUBECONFIG=/var/jenkins_home/.kube/config" // Це монтований файл конфігурації Minikube
                     ]) {
+                        // Переносимо образ з Docker-демона хоста до внутрішнього Docker-демона Minikube
+                        sh 'minikube image load frontend-demo:latest'
+                        echo "Frontend image loaded into Minikube."
+
+                        echo "Applying Frontend Kubernetes manifests..."
                         sh 'kubectl apply -f k8s/frontend/deployment.yaml'
                         sh 'kubectl apply -f k8s/frontend/service.yaml'
 
@@ -167,7 +141,6 @@ pipeline {
                         echo "Frontend deployed to Minikube successfully."
 
                         echo "Access your frontend application at: "
-                        // DOCKER_HOST не потрібен для minikube service --url
                         sh 'minikube service frontend-service --url'
                     }
                 }
