@@ -146,7 +146,7 @@ pipeline {
                                         // --- КІНЕЦЬ ДОДАНИХ РЯДКІВ ---
 
                                         echo "Starting Minikube cluster..."
-                                        sh 'minikube start --driver=docker'
+                                        sh 'minikube start --driver=docker --v=7 --alsologtostderr'
                                         sh 'sleep 10' // Даємо Minikube час на повний запуск
 
                                         sh 'minikube image load demo6:latest'
@@ -232,7 +232,7 @@ pipeline {
                                                 // --- КІНЕЦЬ НОВИХ КОМАНД ---
 
                                                 echo "Starting Minikube cluster..."
-                                                sh 'minikube start --driver=docker'
+                                                sh 'minikube start --driver=docker --v=7 --alsologtostderr'
                                                 sh 'sleep 10'
 
                                                 sh 'minikube image load frontend-demo:latest'
