@@ -140,6 +140,11 @@ pipeline {
                                         sh 'ls -l /var/jenkins_home/.minikube'
                                         // --- КІНЕЦЬ НОВИХ КОМАНД ---
 
+                                        // --- ДОДАЙТЕ ЦІ РЯДКИ ---
+                                        echo "Ensuring clean Minikube state before start..."
+                                        sh 'minikube delete || true' // '|| true' гарантує, що пайплайн не впаде, якщо Minikube не запущений
+                                        // --- КІНЕЦЬ ДОДАНИХ РЯДКІВ ---
+
                                         echo "Starting Minikube cluster..."
                                         sh 'minikube start --driver=docker'
                                         sh 'sleep 10' // Даємо Minikube час на повний запуск
