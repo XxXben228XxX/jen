@@ -16,11 +16,11 @@ pipeline {
             }
         }
 
-        stage('Debug Workspace') { // Оновлений етап для відладки шляхів
+        stage('Debug Workspace') {
             steps {
                 script {
                     echo "Checking specific file locations:"
-                    sh 'pwd' // Показуємо поточну робочу директорію (має бути корінь репозиторію)
+                    sh 'pwd'
 
                     echo "--- Frontend files ---"
                     sh 'ls -l Dockerfile || echo "Dockerfile not found in root"'
@@ -71,7 +71,15 @@ pipeline {
         stage('Build Backend Docker Image') {
             steps {
                 script {
-                    // Змінено: Видалено minikube docker-env. Docker build тепер використовуватиме Docker демон хоста.
+                    // === НОВІ РЯДКИ ДЛЯ ЗАПУСКУ DOCKER-ДЕМОНА ВНУТРІ КОНТЕЙНЕРА ===
+                    echo "Starting Docker daemon inside Jenkins container..."
+                    // Запускаємо dockerd у фоновому режимі, перенаправляючи вивід у /dev/null
+                    sh 'dockerd > /dev/null 2>&1 &'
+                    // Чекаємо, поки Docker-демон стане готовим (до 60 секунд)
+                    sh 'timeout 60 bash -c "while ! docker info >/dev/null 2>&1; do sleep 1; done"'
+                    echo "Docker daemon is running."
+                    // === КІНЕЦЬ НОВИХ РЯДКІВ ===
+
                     sh 'docker build -t demo6:latest -f db-dockerfile/Dockerfile .'
                     echo "Backend Docker image built successfully."
                 }
@@ -83,10 +91,8 @@ pipeline {
                 script {
                     withEnv([
                         "PATH+KUBECTL=/usr/local/bin",
-                        "KUBECONFIG=/var/jenkins_home/.kube/config" // Це монтований файл конфігурації Minikube
+                        "KUBECONFIG=/var/jenkins_home/.kube/config"
                     ]) {
-                        // Переносимо образ з Docker-демона хоста до внутрішнього Docker-демона Minikube
-                        // Ця команда повинна працювати, оскільки Minikube запущено і kubectl його бачить.
                         sh 'minikube image load demo6:latest'
                         echo "Backend image loaded into Minikube."
 
@@ -107,12 +113,18 @@ pipeline {
             }
         }
 
-        // --- НОВІ ЕТАПИ ДЛЯ ФРОНТ-ЕНДУ ---
+        // --- ЕТАПИ ДЛЯ ФРОНТ-ЕНДУ ---
 
         stage('Build Frontend Docker Image') {
             steps {
                 script {
-                    // Змінено: Видалено minikube docker-env. Docker build тепер використовуватиме Docker демон хоста.
+                    // === НОВІ РЯДКИ ДЛЯ ЗАПУСКУ DOCKER-ДЕМОНА ВНУТРІ КОНТЕЙНЕРА ===
+                    echo "Starting Docker daemon inside Jenkins container..."
+                    sh 'dockerd > /dev/null 2>&1 &'
+                    sh 'timeout 60 bash -c "while ! docker info >/dev/null 2>&1; do sleep 1; done"'
+                    echo "Docker daemon is running."
+                    // === КІНЕЦЬ НОВИХ РЯДКІВ ===
+
                     sh 'docker build -t frontend-demo:latest -f frontend/Dockerfile .'
                     echo "Frontend Docker image built successfully."
                 }
@@ -124,9 +136,8 @@ pipeline {
                 script {
                     withEnv([
                         "PATH+KUBECTL=/usr/local/bin",
-                        "KUBECONFIG=/var/jenkins_home/.kube/config" // Це монтований файл конфігурації Minikube
+                        "KUBECONFIG=/var/jenkins_home/.kube/config"
                     ]) {
-                        // Переносимо образ з Docker-демона хоста до внутрішнього Docker-демона Minikube
                         sh 'minikube image load frontend-demo:latest'
                         echo "Frontend image loaded into Minikube."
 
