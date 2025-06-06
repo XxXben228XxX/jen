@@ -97,21 +97,20 @@ pipeline {
                                     sh 'sudo chmod 666 /var/run/docker.sock || echo "Failed to chmod docker.sock"'
                                     sh 'ls -l /var/run/docker.sock'
 
-                                    echo "Attempting docker info directly to check connectivity (capturing all output)..."
-                                    // Виконуємо 'docker info' і захоплюємо його stdout та exit status
-                                    // '2>&1' перенаправляє stderr в stdout
-                                    def dockerInfoResult = sh(script: 'docker info 2>&1', returnStdout: true, returnStatus: true)
+                                    echo "Attempting docker info to check connectivity (Workaround)..."
 
-                                    // --- НОВИЙ ДІАГНОСТИЧНИЙ РЯДОК ---
-                                    echo "Type of dockerInfoResult: ${dockerInfoResult.getClass().getName()}"
-                                    // --- КІНЕЦЬ НОВОГО РЯДКА ---
+                                    // ОБХІДНИЙ ШЛЯХ: Спочатку отримуємо лише код виходу
+                                    // '>/dev/null 2>&1' пригнічує весь вивід команди, тому sh поверне лише статус
+                                    def dockerInfoExitCode = sh(script: 'docker info >/dev/null 2>&1', returnStatus: true)
 
-                                    def fullDockerInfoOutput = dockerInfoResult.stdout.trim() // Тепер це має спрацювати
-                                    def dockerInfoExitCode = dockerInfoResult.status // Тепер це має спрацювати
+                                    // ОБХІДНИЙ ШЛЯХ: Потім отримуємо повний вивід (stderr перенаправлено в stdout)
+                                    // returnStdout: true змусить sh повернути рядок виводу
+                                    def fullDockerInfoOutput = sh(script: 'docker info 2>&1', returnStdout: true).trim()
 
-                                    echo "Full Docker Info Output:\n${fullDockerInfoOutput}"
-                                    echo "Docker Info Exit Code: ${dockerInfoExitCode}"
+                                    echo "Full Docker Info Output (from separate call):\n${fullDockerInfoOutput}"
+                                    echo "Docker Info Exit Code (from separate call): ${dockerInfoExitCode}"
 
+                                    // Перевіряємо, чи docker info успішно завершився (код виходу 0)
                                     if (dockerInfoExitCode == 0) {
                                         echo "Docker daemon is accessible and responsive."
                                         sh 'docker build -t demo6:latest -f db-dockerfile/Dockerfile .'
@@ -182,18 +181,12 @@ pipeline {
                                     sh 'sudo chmod 666 /var/run/docker.sock || echo "Failed to chmod docker.sock"'
                                     sh 'ls -l /var/run/docker.sock'
 
-                                    echo "Attempting docker info directly to check connectivity (capturing all output)..."
-                                    def dockerInfoResult = sh(script: 'docker info 2>&1', returnStdout: true, returnStatus: true)
+                                    echo "Attempting docker info to check connectivity (Workaround)..."
+                                    def dockerInfoExitCode = sh(script: 'docker info >/dev/null 2>&1', returnStatus: true)
+                                    def fullDockerInfoOutput = sh(script: 'docker info 2>&1', returnStdout: true).trim()
 
-                                    // --- НОВИЙ ДІАГНОСТИЧНИЙ РЯДОК ---
-                                    echo "Type of dockerInfoResult: ${dockerInfoResult.getClass().getName()}"
-                                    // --- КІНЕЦЬ НОВОГО РЯДКА ---
-
-                                    def fullDockerInfoOutput = dockerInfoResult.stdout.trim()
-                                    def dockerInfoExitCode = dockerInfoResult.status
-
-                                    echo "Full Docker Info Output:\n${fullDockerInfoOutput}"
-                                    echo "Docker Info Exit Code: ${dockerInfoExitCode}"
+                                    echo "Full Docker Info Output (from separate call):\n${fullDockerInfoOutput}"
+                                    echo "Docker Info Exit Code (from separate call): ${dockerInfoExitCode}"
 
                                     if (dockerInfoExitCode == 0) {
                                         echo "Docker daemon is accessible and responsive."
