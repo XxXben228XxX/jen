@@ -88,16 +88,28 @@ pipeline {
                                     echo "Starting Docker daemon inside Jenkins container for debugging..."
                                     sh 'sleep 5'
 
-                                    // --- ДОДАЙТЕ ЦІ НОВІ РЯДКИ ДЛЯ ДІАГНОСТИКИ ---
                                     echo "Checking Docker socket permissions and Jenkins user info..."
                                     sh 'ls -l /var/run/docker.sock || echo "Docker socket not found or permission denied to list"'
-                                    sh 'id' // Покаже UID, GID та групи користувача Jenkins
-                                    // --- КІНЕЦЬ НОВИХ РЯДКІВ ---
+                                    sh 'id'
+
+                                    // --- ДОДАЙТЕ ЦЕЙ РЯДОК ---
+                                    // Зміна групової власності сокету на 996 (група 'docker'), щоб користувач 'jenkins' мав доступ.
+                                    // 'sudo' може знадобитися, оскільки власник сокету root.
+                                    sh 'sudo chown root:996 /var/run/docker.sock || echo "Failed to change docker.sock group. Trying chmod..."'
+                                    sh 'ls -l /var/run/docker.sock' # Перевіряємо дозволи після chown
+
+                                    // --- Додайте цей рядок як запасний варіант на випадок, якщо chown не спрацює ---
+                                    // Надання дозволу на запис для всіх, хто має доступ до сокету.
+                                    // Це менш безпечно, але допомагає для діагностики та тимчасового вирішення.
+                                    sh 'sudo chmod 666 /var/run/docker.sock || echo "Failed to chmod docker.sock"'
+                                    sh 'ls -l /var/run/docker.sock' # Перевіряємо дозволи після chmod
+                                    // --- КІНЕЦЬ ДОДАНИХ РЯДКІВ ---
+
 
                                     def dockerDaemonReady = sh(script: 'timeout 60 bash -c "while ! docker info >/dev/null 2>&1; do sleep 1; done"', returnStatus: true)
 
                                     echo "--- DOCKERD LOGS START ---"
-                                    sh 'cat /tmp/dockerd.log' // Цей рядок все ще буде видавати помилку "No such file", це нормально
+                                    sh 'cat /tmp/dockerd.log'
                                     echo "--- DOCKERD LOGS END ---"
 
                                     if (dockerDaemonReady == 0) {
@@ -161,11 +173,16 @@ pipeline {
                                     echo "Starting Docker daemon inside Jenkins container for debugging..."
                                     sh 'sleep 5'
 
-                                    // --- ДОДАЙТЕ ЦІ НОВІ РЯДКИ ДЛЯ ДІАГНОСТИКИ ---
                                     echo "Checking Docker socket permissions and Jenkins user info (Frontend)..."
                                     sh 'ls -l /var/run/docker.sock || echo "Docker socket not found or permission denied to list"'
                                     sh 'id'
-                                    // --- КІНЕЦЬ НОВИХ РЯДКІВ ---
+
+                                    // --- ДОДАЙТЕ ЦІ РЯДКИ ---
+                                    sh 'sudo chown root:996 /var/run/docker.sock || echo "Failed to change docker.sock group. Trying chmod..."'
+                                    sh 'ls -l /var/run/docker.sock'
+                                    sh 'sudo chmod 666 /var/run/docker.sock || echo "Failed to chmod docker.sock"'
+                                    sh 'ls -l /var/run/docker.sock'
+                                    // --- КІНЕЦЬ ДОДАНИХ РЯДКІВ ---
 
                                     def dockerDaemonReady = sh(script: 'timeout 60 bash -c "while ! docker info >/dev/null 2>&1; do sleep 1; done"', returnStatus: true)
 
