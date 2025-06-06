@@ -71,14 +71,20 @@ pipeline {
         stage('Build Backend Docker Image') {
             steps {
                 script {
-                    // === НОВІ РЯДКИ ДЛЯ ЗАПУСКУ DOCKER-ДЕМОНА ВНУТРІ КОНТЕЙНЕРА ===
-                    echo "Starting Docker daemon inside Jenkins container..."
-                    // Запускаємо dockerd у фоновому режимі, перенаправляючи вивід у /dev/null
-                    sh 'dockerd > /dev/null 2>&1 &'
+                    echo "Starting Docker daemon inside Jenkins container for debugging..."
+                    // Запускаємо dockerd у фоновому режимі з режимом налагодження, перенаправляючи вивід у файл
+                    sh 'dockerd --debug > /tmp/dockerd.log 2>&1 &'
+                    // Даємо йому кілька секунд для початку запису логів
+                    sh 'sleep 5'
                     // Чекаємо, поки Docker-демон стане готовим (до 60 секунд)
-                    sh 'timeout 60 bash -c "while ! docker info >/dev/null 2>&1; do sleep 1; done"'
+                    // Якщо docker info не спрацює за 60 секунд, пайплайн видасть помилку
+                    sh 'timeout 60 bash -c "while ! docker info >/dev/null 2>&1; do sleep 1; done"' || error("Docker daemon did not start in time!")
                     echo "Docker daemon is running."
-                    // === КІНЕЦЬ НОВИХ РЯДКІВ ===
+
+                    // Виводимо вміст лог-файлу dockerd для налагодження
+                    echo "--- DOCKERD LOGS START ---"
+                    sh 'cat /tmp/dockerd.log'
+                    echo "--- DOCKERD LOGS END ---"
 
                     sh 'docker build -t demo6:latest -f db-dockerfile/Dockerfile .'
                     echo "Backend Docker image built successfully."
@@ -118,12 +124,14 @@ pipeline {
         stage('Build Frontend Docker Image') {
             steps {
                 script {
-                    // === НОВІ РЯДКИ ДЛЯ ЗАПУСКУ DOCKER-ДЕМОНА ВНУТРІ КОНТЕЙНЕРА ===
-                    echo "Starting Docker daemon inside Jenkins container..."
-                    sh 'dockerd > /dev/null 2>&1 &'
-                    sh 'timeout 60 bash -c "while ! docker info >/dev/null 2>&1; do sleep 1; done"'
+                    echo "Starting Docker daemon inside Jenkins container for debugging..."
+                    sh 'dockerd --debug > /tmp/dockerd_frontend.log 2>&1 &'
+                    sh 'sleep 5'
+                    sh 'timeout 60 bash -c "while ! docker info >/dev/null 2>&1; do sleep 1; done"' || error("Docker daemon did not start in time!")
                     echo "Docker daemon is running."
-                    // === КІНЕЦЬ НОВИХ РЯДКІВ ===
+                    echo "--- DOCKERD LOGS START (Frontend) ---"
+                    sh 'cat /tmp/dockerd_frontend.log'
+                    echo "--- DOCKERD LOGS END (Frontend) ---"
 
                     sh 'docker build -t frontend-demo:latest -f frontend/Dockerfile .'
                     echo "Frontend Docker image built successfully."
