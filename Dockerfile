@@ -5,35 +5,33 @@ FROM jenkins/jenkins:lts-jdk21
 USER root
 
 # Встановлюємо sudo, curl, wget, lsb-release та dirmngr
+# А також всі компоненти Docker (демон, клієнт, containerd, buildx, compose)
 RUN apt-get update && \
-    apt-get install -y sudo curl wget apt-transport-https ca-certificates gnupg lsb-release dirmngr && \
+    apt-get install -yq ca-certificates curl gnupg lsb-release sudo wget apt-transport-https dirmngr && \
     rm -rf /var/lib/apt/lists/*
 
 # Додаємо GPG ключ Docker
-RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+RUN install -m 0755 -d /etc/apt/keyrings && \
+    curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 
-# Додаємо репозиторій Docker
-RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+# Додаємо репозиторій Docker до Apt sources
+RUN echo \
+    "deb [arch=\"$(dpkg --print-architecture)\" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
+    \"$(. /etc/os-release && echo \"$VERSION_CODENAME\")\" stable" | \
+    tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-# Оновлюємо список пакетів з новим репозиторієм та встановлюємо Docker CLI
+# Оновлюємо список пакетів та встановлюємо Docker-компоненти
+# Зверніть увагу: тепер встановлюється docker-ce (демон), а не лише docker-ce-cli
 RUN apt-get update && \
-    apt-get install -y docker-ce-cli && \
+    apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin && \
     rm -rf /var/lib/apt/lists/*
 
-# Створюємо групу 'docker', якщо її не існує
-RUN groupadd docker || true
-# Додаємо Jenkins користувача до групи docker
-RUN usermod -aG docker jenkins
+# Додаємо користувача jenkins до групи docker.
+# Це дозволить користувачу jenkins виконувати команди docker без sudo.
+RUN groupadd docker || true && usermod -aG docker jenkins
 
-# === ВИПРАВЛЕННЯ ДЛЯ ДОЗВОЛІВ DOCKER.SOCK (обхідний шлях) ===
-# Цей скрипт буде виконуватися при старті контейнера.
-# Встановлює дозволи 666 (читання/запис для всіх) на сокет Docker,
-# а також намагається змінити власника на jenkins:docker.
-# Це менш безпечно, але допомагає вирішити проблеми з дозволами в середовищах розробки.
-RUN echo '#!/bin/bash' > /usr/local/bin/fix-docker-sock-perms.sh && \
-    echo 'chmod 666 /var/run/docker.sock || true' >> /usr/local/bin/fix-docker-sock-perms.sh && \
-    echo 'chown jenkins:docker /var/run/docker.sock || true' >> /usr/local/bin/fix-docker-sock-perms.sh && \
-    chmod +x /usr/local/bin/fix-docker-sock-perms.sh
+# === ВИДАЛЕНО: Скрипт fix-docker-sock-perms.sh та його виклик у CMD ===
+# Ці кроки більше не потрібні, оскільки Jenkins тепер запускає свій власний Docker демон всередині.
 
 # Встановлюємо kubectl
 RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \
@@ -49,7 +47,6 @@ RUN curl -Lo minikube https://github.com/kubernetes/minikube/releases/download/$
 # Повертаємося до користувача jenkins
 USER jenkins
 
-# === ПЕРЕЗАПИСУЄМО CMD ДЛЯ ВИКОНАННЯ НАШОГО СКРИПТА ПЕРЕД ЗАПУСКОМ JENKINS ===
-# Базовий образ Jenkins вже має ENTRYPOINT, який використовує tini.
-# Ми просто змінюємо CMD, щоб він спочатку виконав наш скрипт, а потім оригінальний jenkins.sh
-CMD ["/bin/bash", "-c", "/usr/local/bin/fix-docker-sock-perms.sh && /usr/local/bin/jenkins.sh"]
+# Базовий образ Jenkins вже має правильний ENTRYPOINT.
+# Ми не змінюємо CMD, оскільки тепер Docker-демон запускатиметься як частина середовища.
+# Jenkins запускається з його стандартним ENTRYPOINT.
