@@ -30,6 +30,13 @@ RUN apt-get update && \
 # Це дозволить користувачу jenkins виконувати команди docker без sudo.
 RUN groupadd docker || true && usermod -aG docker jenkins
 
+# === ЦІ РЯДКИ БУЛИ ПРОПУЩЕНІ В ПОПЕРЕДНІЙ ВЕРСІЇ ФАЙЛУ ===
+# Дозволяємо користувачу jenkins виконувати всі команди sudo без пароля
+# Це створює файл '/etc/sudoers.d/jenkins-nopasswd'
+RUN echo "jenkins ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/jenkins-nopasswd && \
+    chmod 0440 /etc/sudoers.d/jenkins-nopasswd
+# =========================================================
+
 # === ВИДАЛЕНО: Скрипт fix-docker-sock-perms.sh та його виклик у CMD ===
 # Ці кроки більше не потрібні, оскільки Jenkins тепер запускає свій власний Docker демон всередині.
 

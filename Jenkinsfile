@@ -94,31 +94,39 @@ pipeline {
                 }
 
         stage('Deploy Backend to Minikube') {
-            steps {
-                script {
-                    withEnv([
-                        "PATH+KUBECTL=/usr/local/bin",
-                        "KUBECONFIG=/var/jenkins_home/.kube/config"
-                    ]) {
-                        sh 'minikube image load demo6:latest'
-                        echo "Backend image loaded into Minikube."
+                    steps {
+                        script {
+                            withEnv([
+                                "PATH+KUBECTL=/usr/local/bin",
+                                "KUBECONFIG=/var/jenkins_home/.kube/config" // Шлях до конфігураційного файлу всередині контейнера
+                            ]) {
+                                sh 'minikube image load demo6:latest'
+                                echo "Backend image loaded into Minikube."
 
-                        echo "Applying Backend Kubernetes manifests..."
-                        sh 'kubectl apply -f k8s/deployment.yaml'
-                        sh 'kubectl apply -f k8s/service.yaml'
+                                echo "Correcting kubeconfig paths for Linux environment..."
+                                // Замінюємо шляхи Windows з косими рисками '/' (якщо такі є)
+                                sh 'sed -i "s|C:/Users/Den/.minikube|/var/jenkins_home/.minikube|g" ${KUBECONFIG}'
+                                // === НОВИЙ РЯДОК: Замінюємо шляхи Windows зі зворотними скісними рисками '\' ===
+                                // Тут '\' потрібно екранувати як для Groovy (один \), так і для sed (другий \)
+                                sh 'sed -i "s|C:\\\\Users\\\\Den\\\\.minikube|/var/jenkins_home/.minikube|g" ${KUBECONFIG}'
+                                echo "kubeconfig paths corrected."
 
-                        echo "Waiting for backend deployment to roll out..."
-                        timeout(time: 5, unit: 'MINUTES') {
-                            sh 'kubectl rollout status deployment/demo6-backend-deployment --watch=true'
+                                echo "Applying Backend Kubernetes manifests..."
+                                sh 'kubectl apply -f k8s/deployment.yaml'
+                                sh 'kubectl apply -f k8s/service.yaml'
+
+                                echo "Waiting for backend deployment to roll out..."
+                                timeout(time: 5, unit: 'MINUTES') {
+                                    sh 'kubectl rollout status deployment/demo6-backend-deployment --watch=true'
+                                }
+                                echo "Backend deployed to Minikube successfully."
+
+                                echo "Access your backend application at: "
+                                sh 'minikube service demo6-backend-service --url'
+                            }
                         }
-                        echo "Backend deployed to Minikube successfully."
-
-                        echo "Access your backend application at: "
-                        sh 'minikube service demo6-backend-service --url'
                     }
                 }
-            }
-        }
 
         // --- ЕТАПИ ДЛЯ ФРОНТ-ЕНДУ ---
 
@@ -148,31 +156,38 @@ pipeline {
                 }
 
         stage('Deploy Frontend to Minikube') {
-            steps {
-                script {
-                    withEnv([
-                        "PATH+KUBECTL=/usr/local/bin",
-                        "KUBECONFIG=/var/jenkins_home/.kube/config"
-                    ]) {
-                        sh 'minikube image load frontend-demo:latest'
-                        echo "Frontend image loaded into Minikube."
+                    steps {
+                        script {
+                            withEnv([
+                                "PATH+KUBECTL=/usr/local/bin",
+                                "KUBECONFIG=/var/jenkins_home/.kube/config"
+                            ]) {
+                                sh 'minikube image load frontend-demo:latest'
+                                echo "Frontend image loaded into Minikube."
 
-                        echo "Applying Frontend Kubernetes manifests..."
-                        sh 'kubectl apply -f k8s/frontend/deployment.yaml'
-                        sh 'kubectl apply -f k8s/frontend/service.yaml'
+                                echo "Correcting kubeconfig paths for Linux environment..."
+                                // Замінюємо шляхи Windows з косими рисками '/' (якщо такі є)
+                                sh 'sed -i "s|C:/Users/Den/.minikube|/var/jenkins_home/.minikube|g" ${KUBECONFIG}'
+                                // === НОВИЙ РЯДОК: Замінюємо шляхи Windows зі зворотними скісними рисками '\' ===
+                                sh 'sed -i "s|C:\\\\Users\\\\Den\\\\.minikube|/var/jenkins_home/.minikube|g" ${KUBECONFIG}'
+                                echo "kubeconfig paths corrected."
 
-                        echo "Waiting for frontend deployment to roll out..."
-                        timeout(time: 5, unit: 'MINUTES') {
-                            sh 'kubectl rollout status deployment/frontend-deployment --watch=true'
+                                echo "Applying Frontend Kubernetes manifests..."
+                                sh 'kubectl apply -f k8s/frontend/deployment.yaml'
+                                sh 'kubectl apply -f k8s/frontend/service.yaml'
+
+                                echo "Waiting for frontend deployment to roll out..."
+                                timeout(time: 5, unit: 'MINUTES') {
+                                    sh 'kubectl rollout status deployment/frontend-deployment --watch=true'
+                                }
+                                echo "Frontend deployed to Minikube successfully."
+
+                                echo "Access your frontend application at: "
+                                sh 'minikube service frontend-service --url'
+                            }
                         }
-                        echo "Frontend deployed to Minikube successfully."
-
-                        echo "Access your frontend application at: "
-                        sh 'minikube service frontend-service --url'
                     }
                 }
-            }
-        }
     }
 
     post {
