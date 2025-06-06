@@ -21,34 +21,19 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Створюємо групу 'docker', якщо її не існує
-# Це дасть користувачу jenkins права на доступ до docker.sock
 RUN groupadd docker || true
 # Додаємо Jenkins користувача до групи docker
 RUN usermod -aG docker jenkins
 
-# === НОВИЙ КРОК: Змінюємо дозволи на docker.sock при запуску контейнера (обхідний шлях) ===
-# Цей скрипт запускатиметься щоразу при старті контейнера.
-# Встановлює дозволи 666 (читання/запис для всіх) на сокет Docker.
+# === ВИПРАВЛЕННЯ ДЛЯ ДОЗВОЛІВ DOCKER.SOCK (обхідний шлях) ===
+# Цей скрипт буде виконуватися при старті контейнера.
+# Встановлює дозволи 666 (читання/запис для всіх) на сокет Docker,
+# а також намагається змінити власника на jenkins:docker.
 # Це менш безпечно, але допомагає вирішити проблеми з дозволами в середовищах розробки.
 RUN echo '#!/bin/bash' > /usr/local/bin/fix-docker-sock-perms.sh && \
-    echo 'chmod 666 /var/run/docker.sock' >> /usr/local/bin/fix-docker-sock-perms.sh && \
+    echo 'chmod 666 /var/run/docker.sock || true' >> /usr/local/bin/fix-docker-sock-perms.sh && \
+    echo 'chown jenkins:docker /var/run/docker.sock || true' >> /usr/local/bin/fix-docker-sock-perms.sh && \
     chmod +x /usr/local/bin/fix-docker-sock-perms.sh
-
-# Додаємо виклик цього скрипта до entrypoint Jenkins, щоб він запускався при старті
-# Використовуємо Jenkins `entrypoint.sh` за замовчуванням
-ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/jenkins.sh"]
-CMD ["/usr/local/bin/fix-docker-sock-perms.sh", "&&", "/usr/local/bin/jenkins.sh"] # Передаємо наш скрипт перед оригінальним CMD.
-# Змінив CMD, щоб додати виконання fix-docker-sock-perms.sh. Це не зовсім стандартно.
-# Краще було б створити custom entrypoint, який викликає наш скрипт, а потім оригінальний entrypoint/cmd.
-# Давайте зробимо це більш надійним способом.
-
-# Зробимо краще: створимо кастомний entrypoint, який запустить наш скрипт, а потім викличе оригінальний jenkins.sh
-COPY entrypoint.sh /usr/local/bin/custom-jenkins-entrypoint.sh
-RUN chmod +x /usr/local/bin/custom-jenkins-entrypoint.sh
-ENTRYPOINT ["/usr/local/bin/tini", "--", "/usr/local/bin/custom-jenkins-entrypoint.sh"]
-
-
-# === КІНЕЦЬ НОВОГО КРОКУ ===
 
 # Встановлюємо kubectl
 RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \
@@ -63,3 +48,8 @@ RUN curl -Lo minikube https://github.com/kubernetes/minikube/releases/download/$
 
 # Повертаємося до користувача jenkins
 USER jenkins
+
+# === ПЕРЕЗАПИСУЄМО CMD ДЛЯ ВИКОНАННЯ НАШОГО СКРИПТА ПЕРЕД ЗАПУСКОМ JENKINS ===
+# Базовий образ Jenkins вже має ENTRYPOINT, який використовує tini.
+# Ми просто змінюємо CMD, щоб він спочатку виконав наш скрипт, а потім оригінальний jenkins.sh
+CMD ["/bin/bash", "-c", "/usr/local/bin/fix-docker-sock-perms.sh && /usr/local/bin/jenkins.sh"]
