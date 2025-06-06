@@ -123,46 +123,57 @@ pipeline {
                         }
 
         stage('Deploy Backend to Minikube') {
-                    steps {
-                        script {
-                            withEnv([
-                                "PATH+KUBECTL=/usr/local/bin",
-                                "KUBECONFIG=/var/jenkins_home/.kube/config" // Шлях до конфігураційного файлу всередині контейнера
-                            ]) {
-                                echo "Starting Minikube cluster..."
-                                sh 'minikube start --driver=docker' // <--- ДОДАЙТЕ ЦЕЙ РЯДОК
-                                sh 'sleep 10' // <--- ДОДАЙТЕ ЦЕЙ РЯДОК (даємо Minikube час на повний запуск)
+                            steps {
+                                script {
+                                    withEnv([
+                                        "PATH+KUBECTL=/usr/local/bin",
+                                        "KUBECONFIG=/var/jenkins_home/.kube/config" // Шлях до конфігураційного файлу всередині контейнера
+                                    ]) {
+                                        // --- НОВІ КОМАНДИ ДЛЯ ВИПРАВЛЕННЯ ДОЗВОЛІВ MINIKUBE ---
+                                        echo "Setting permissions for .minikube directory..."
+                                        // Переконайтеся, що .minikube директорія існує і належить jenkins:jenkins
+                                        sh 'sudo mkdir -p /var/jenkins_home/.minikube'
+                                        sh 'sudo chown -R jenkins:jenkins /var/jenkins_home/.minikube'
+                                        sh 'chmod -R u+rwx /var/jenkins_home/.minikube' // Повні права для власника
+                                        // Діагностичні команди (виведуть поточні дозволи)
+                                        sh 'ls -ld /var/jenkins_home/.minikube'
+                                        sh 'ls -l /var/jenkins_home/.minikube'
+                                        // --- КІНЕЦЬ НОВИХ КОМАНД ---
 
-                                sh 'minikube image load demo6:latest'
-                                echo "Backend image loaded into Minikube."
+                                        echo "Starting Minikube cluster..."
+                                        sh 'minikube start --driver=docker'
+                                        sh 'sleep 10' // Даємо Minikube час на повний запуск
 
-                                echo "Correcting kubeconfig paths for Linux environment..."
-                                sh 'sed -i "s|C:/Users/Den/.minikube|/var/jenkins_home/.minikube|g" ${KUBECONFIG}'
-                                sh 'sed -i "s|C:\\\\Users\\\\Den\\\\.minikube|/var/jenkins_home/.minikube|g" ${KUBECONFIG}'
-                                sh 'cat ${KUBECONFIG} | tr "\\\\" "/" > ${KUBECONFIG}.tmp && mv ${KUBECONFIG}.tmp ${KUBECONFIG}'
-                                echo "kubeconfig paths corrected."
+                                        sh 'minikube image load demo6:latest'
+                                        echo "Backend image loaded into Minikube."
 
-                                echo "--- KUBECONFIG CONTENT AFTER TR ---"
-                                sh 'cat ${KUBECONFIG}'
-                                echo "--- KUBECONFIG CONTENT END ---"
+                                        echo "Correcting kubeconfig paths for Linux environment..."
+                                        sh 'sed -i "s|C:/Users/Den/.minikube|/var/jenkins_home/.minikube|g" ${KUBECONFIG}'
+                                        sh 'sed -i "s|C:\\\\Users\\\\Den\\\\.minikube|/var/jenkins_home/.minikube|g" ${KUBECONFIG}'
+                                        sh 'cat ${KUBECONFIG} | tr "\\\\" "/" > ${KUBECONFIG}.tmp && mv ${KUBECONFIG}.tmp ${KUBECONFIG}'
+                                        echo "kubeconfig paths corrected."
+
+                                        echo "--- KUBECONFIG CONTENT AFTER TR ---"
+                                        sh 'cat ${KUBECONFIG}'
+                                        echo "--- KUBECONFIG CONTENT END ---"
 
 
-                                echo "Applying Backend Kubernetes manifests..."
-                                sh 'kubectl apply -f k8s/deployment.yaml'
-                                sh 'kubectl apply -f k8s/service.yaml'
+                                        echo "Applying Backend Kubernetes manifests..."
+                                        sh 'kubectl apply -f k8s/deployment.yaml'
+                                        sh 'kubectl apply -f k8s/service.yaml'
 
-                                echo "Waiting for backend deployment to roll out..."
-                                timeout(time: 5, unit: 'MINUTES') {
-                                    sh 'kubectl rollout status deployment/demo6-backend-deployment --watch=true'
+                                        echo "Waiting for backend deployment to roll out..."
+                                        timeout(time: 5, unit: 'MINUTES') {
+                                            sh 'kubectl rollout status deployment/demo6-backend-deployment --watch=true'
+                                        }
+                                        echo "Backend deployed to Minikube successfully."
+
+                                        echo "Access your backend application at: "
+                                        sh 'minikube service demo6-backend-service --url'
+                                    }
                                 }
-                                echo "Backend deployed to Minikube successfully."
-
-                                echo "Access your backend application at: "
-                                sh 'minikube service demo6-backend-service --url'
                             }
                         }
-                    }
-                }
 
         // --- ЕТАПИ ДЛЯ ФРОНТ-ЕНДУ ---
 
@@ -200,45 +211,54 @@ pipeline {
                         }
 
         stage('Deploy Frontend to Minikube') {
-                            steps {
-                                script {
-                                    withEnv([
-                                        "PATH+KUBECTL=/usr/local/bin",
-                                        "KUBECONFIG=/var/jenkins_home/.kube/config"
-                                    ]) {
-                                        echo "Starting Minikube cluster..."
-                                        sh 'minikube start --driver=docker' // <--- ДОДАЙТЕ ЦЕЙ РЯДОК
-                                        sh 'sleep 10' // <--- ДОДАЙТЕ ЦЕЙ РЯДОК
+                                    steps {
+                                        script {
+                                            withEnv([
+                                                "PATH+KUBECTL=/usr/local/bin",
+                                                "KUBECONFIG=/var/jenkins_home/.kube/config"
+                                            ]) {
+                                                // --- НОВІ КОМАНДИ ДЛЯ ВИПРАВЛЕННЯ ДОЗВОЛІВ MINIKUBE ---
+                                                echo "Setting permissions for .minikube directory (Frontend)..."
+                                                sh 'sudo mkdir -p /var/jenkins_home/.minikube'
+                                                sh 'sudo chown -R jenkins:jenkins /var/jenkins_home/.minikube'
+                                                sh 'chmod -R u+rwx /var/jenkins_home/.minikube'
+                                                sh 'ls -ld /var/jenkins_home/.minikube'
+                                                sh 'ls -l /var/jenkins_home/.minikube'
+                                                // --- КІНЕЦЬ НОВИХ КОМАНД ---
 
-                                        sh 'minikube image load frontend-demo:latest'
-                                        echo "Frontend image loaded into Minikube."
+                                                echo "Starting Minikube cluster..."
+                                                sh 'minikube start --driver=docker'
+                                                sh 'sleep 10'
 
-                                        echo "Correcting kubeconfig paths for Linux environment..."
-                                        sh 'sed -i "s|C:/Users/Den/.minikube|/var/jenkins_home/.minikube|g" ${KUBECONFIG}'
-                                        sh 'sed -i "s|C:\\\\Users\\\\Den\\\\.minikube|/var/jenkins_home/.minikube|g" ${KUBECONFIG}'
-                                        sh 'cat ${KUBECONFIG} | tr "\\\\" "/" > ${KUBECONFIG}.tmp && mv ${KUBECONFIG}.tmp ${KUBECONFIG}'
-                                        echo "kubeconfig paths corrected."
+                                                sh 'minikube image load frontend-demo:latest'
+                                                echo "Frontend image loaded into Minikube."
 
-                                        echo "--- KUBECONFIG CONTENT AFTER TR ---"
-                                        sh 'cat ${KUBECONFIG}'
-                                        echo "--- KUBECONFIG CONTENT END ---"
+                                                echo "Correcting kubeconfig paths for Linux environment..."
+                                                sh 'sed -i "s|C:/Users/Den/.minikube|/var/jenkins_home/.minikube|g" ${KUBECONFIG}'
+                                                sh 'sed -i "s|C:\\\\Users\\\\Den\\\\.minikube|/var/jenkins_home/.minikube|g" ${KUBECONFIG}'
+                                                sh 'cat ${KUBECONFIG} | tr "\\\\" "/" > ${KUBECONFIG}.tmp && mv ${KUBECONFIG}.tmp ${KUBECONFIG}'
+                                                echo "kubeconfig paths corrected."
 
-                                        echo "Applying Frontend Kubernetes manifests..."
-                                        sh 'kubectl apply -f k8s/frontend/deployment.yaml'
-                                        sh 'kubectl apply -f k8s/frontend/service.yaml'
+                                                echo "--- KUBECONFIG CONTENT AFTER TR ---"
+                                                sh 'cat ${KUBECONFIG}'
+                                                echo "--- KUBECONFIG CONTENT END ---"
 
-                                        echo "Waiting for frontend deployment to roll out..."
-                                        timeout(time: 5, unit: 'MINUTES') {
-                                            sh 'kubectl rollout status deployment/frontend-deployment --watch=true'
+                                                echo "Applying Frontend Kubernetes manifests..."
+                                                sh 'kubectl apply -f k8s/frontend/deployment.yaml'
+                                                sh 'kubectl apply -f k8s/frontend/service.yaml'
+
+                                                echo "Waiting for frontend deployment to roll out..."
+                                                timeout(time: 5, unit: 'MINUTES') {
+                                                    sh 'kubectl rollout status deployment/frontend-deployment --watch=true'
+                                                }
+                                                echo "Frontend deployed to Minikube successfully."
+
+                                                echo "Access your frontend application at: "
+                                                sh 'minikube service frontend-service --url'
+                                            }
                                         }
-                                        echo "Frontend deployed to Minikube successfully."
-
-                                        echo "Access your frontend application at: "
-                                        sh 'minikube service frontend-service --url'
                                     }
                                 }
-                            }
-                        }
     }
 
     post {
