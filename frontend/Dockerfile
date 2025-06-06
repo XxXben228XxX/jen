@@ -1,9 +1,9 @@
 # Build stage
 FROM node:18 AS build
 WORKDIR /app
-COPY package*.json ./
+COPY frontend/package*.json ./
 RUN npm install
-COPY . .
+COPY frontend/. .
 
 # Підставляємо змінну середовища для білду React
 ARG REACT_APP_API_URL

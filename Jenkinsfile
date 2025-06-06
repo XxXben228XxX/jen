@@ -201,12 +201,13 @@ pipeline {
                     echo "Docker Info Exit Code (from separate call): ${dockerInfoExitCode}"
 
                     if (dockerInfoExitCode == 0) {
-                        echo "Docker daemon is accessible and responsive."
-                        sh 'docker build -t frontend-demo:latest -f frontend/Dockerfile .'
-                        echo "Frontend Docker image built successfully."
-                    } else {
-                        error("Docker daemon is NOT accessible or responsive. Docker info exited with code ${dockerInfoExitCode}. Full output: ${fullDockerInfoOutput}")
-                    }
+                                    echo "Docker daemon is accessible and responsive."
+                                    // ДОДАЙТЕ --build-arg СЮДИ
+                                    sh 'docker build -t frontend-demo:latest --build-arg REACT_APP_API_URL=http://demo6-backend-service:8080 -f frontend/Dockerfile .'
+                                    echo "Frontend Docker image built successfully."
+                                } else {
+                                    error("Docker daemon is NOT accessible or responsive. Docker info exited with code ${dockerInfoExitCode}. Full output: ${fullDockerInfoOutput}")
+                                }
                 }
             }
         }

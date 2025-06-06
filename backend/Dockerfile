@@ -5,9 +5,8 @@ COPY pom.xml .
 RUN mvn dependency:go-offline
 
 COPY src ./src
-RUN mvn clean package -Pproduction -DskipTests \
-  && mvn -B -e -ntp vaadin:prepare-frontend -Pproduction -DproductionMode \
-  && mvn package -Pproduction -DskipTests
+# Зазвичай, достатньо однієї команди package, якщо vaadin:prepare-frontend інтегровано
+RUN mvn clean package -Pproduction -DskipTests
 
 # Run stage
 FROM eclipse-temurin:21-jre-alpine
