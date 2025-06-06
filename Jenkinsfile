@@ -97,23 +97,28 @@ pipeline {
                                     sh 'sudo chmod 666 /var/run/docker.sock || echo "Failed to chmod docker.sock"'
                                     sh 'ls -l /var/run/docker.sock'
 
-                                    // --- ЗМІНІТЬ ЦЕЙ БЛОК ---
-                                    echo "Attempting docker info directly..."
-                                    // Виконуємо 'docker info' і захоплюємо весь вивід (включаючи помилки)
-                                    def dockerInfoResult = sh(script: 'docker info', returnStatus: true, returnStdout: true, returnStderr: true)
-                                    def dockerInfoOutput = dockerInfoResult.stdout + dockerInfoResult.stderr
+                                    // --- КРИТИЧНА ЗМІНА ТУТ ---
+                                    echo "Attempting docker info directly to check connectivity..."
+                                    // Тепер ми просто захоплюємо стандартний вивід і статус, без returnStderr
+                                    def dockerInfoResult = sh(script: 'docker info', returnStdout: true, returnStatus: true)
+                                    def dockerInfoStdout = dockerInfoResult.stdout.trim() // Отримуємо лише stdout
                                     def dockerInfoExitCode = dockerInfoResult.status
 
-                                    echo "Docker Info Output:\n${dockerInfoOutput}"
+                                    echo "Docker Info (STDOUT):\n${dockerInfoStdout}"
+                                    echo "Docker Info Exit Code: ${dockerInfoExitCode}"
 
+                                    // Перевіряємо, чи docker info успішно завершився (exit code 0) І чи він вивів щось.
+                                    // Оскільки попередження Docker виводяться в stderr, а ми захоплюємо лише stdout,
+                                    // якщо stdout порожній, але exit code 0, це все одно вважаємо успіхом.
                                     if (dockerInfoExitCode == 0) {
-                                        echo "Docker daemon is accessible."
+                                        echo "Docker daemon is accessible and responsive."
                                         sh 'docker build -t demo6:latest -f db-dockerfile/Dockerfile .'
                                         echo "Backend Docker image built successfully."
                                     } else {
-                                        error("Docker daemon is NOT accessible. Docker info exited with code ${dockerInfoExitCode}. Check Docker Info Output above for details.")
+                                        // Якщо exit code не 0, або stdout порожній (що не очікується, якщо exit code 0), це проблема
+                                        error("Docker daemon is NOT accessible or responsive. Docker info exited with code ${dockerInfoExitCode}. Full stdout: ${dockerInfoStdout}")
                                     }
-                                    // --- КІНЕЦЬ ЗМІНЕННЯ БЛОКУ ---
+                                    // --- КІНЕЦЬ КРИТИЧНОЇ ЗМІНИ ---
                                 }
                             }
                         }
@@ -177,19 +182,23 @@ pipeline {
                                     sh 'sudo chmod 666 /var/run/docker.sock || echo "Failed to chmod docker.sock"'
                                     sh 'ls -l /var/run/docker.sock'
 
-                                    // --- ЗМІНІТЬ ЦЕЙ БЛОК ---
-                                    echo "Attempting docker info directly..."
-                                    def dockerInfoResult = sh(script: 'docker info', returnStatus: true, returnStdout: true, returnStderr: true)
-                                    def dockerInfoOutput = dockerInfoResult.stdout + dockerInfoResult.stderr
+                                    // --- КРИТИЧНА ЗМІНА ТУТ ---
+                                    echo "Attempting docker info directly to check connectivity..."
+                                    def dockerInfoResult = sh(script: 'docker info', returnStdout: true, returnStatus: true)
+                                    def dockerInfoStdout = dockerInfoResult.stdout.trim()
+                                    def dockerInfoExitCode = dockerInfoResult.status
 
-                                    if (dockerInfoResult.status == 0) {
-                                        echo "Docker daemon is running."
+                                    echo "Docker Info (STDOUT):\n${dockerInfoStdout}"
+                                    echo "Docker Info Exit Code: ${dockerInfoExitCode}"
+
+                                    if (dockerInfoExitCode == 0) {
+                                        echo "Docker daemon is accessible and responsive."
                                         sh 'docker build -t frontend-demo:latest -f frontend/Dockerfile .'
                                         echo "Frontend Docker image built successfully."
                                     } else {
-                                        error("Docker daemon did not start in time. Check DOCKERD LOGS above for details.")
+                                        error("Docker daemon is NOT accessible or responsive. Docker info exited with code ${dockerInfoExitCode}. Full stdout: ${dockerInfoStdout}")
                                     }
-                                    // --- КІНЕЦЬ ЗМІНЕННЯ БЛОКУ ---
+                                    // --- КІНЕЦЬ КРИТИЧНОЇ ЗМІНИ ---
                                 }
                             }
                         }
