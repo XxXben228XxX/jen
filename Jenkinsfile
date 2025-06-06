@@ -96,13 +96,13 @@ pipeline {
                                     // Зміна групової власності сокету на 996 (група 'docker'), щоб користувач 'jenkins' мав доступ.
                                     // 'sudo' може знадобитися, оскільки власник сокету root.
                                     sh 'sudo chown root:996 /var/run/docker.sock || echo "Failed to change docker.sock group. Trying chmod..."'
-                                    sh 'ls -l /var/run/docker.sock' # Перевіряємо дозволи після chown
+                                    sh 'ls -l /var/run/docker.sock' // Перевіряємо дозволи після chown
 
                                     // --- Додайте цей рядок як запасний варіант на випадок, якщо chown не спрацює ---
                                     // Надання дозволу на запис для всіх, хто має доступ до сокету.
                                     // Це менш безпечно, але допомагає для діагностики та тимчасового вирішення.
                                     sh 'sudo chmod 666 /var/run/docker.sock || echo "Failed to chmod docker.sock"'
-                                    sh 'ls -l /var/run/docker.sock' # Перевіряємо дозволи після chmod
+                                    sh 'ls -l /var/run/docker.sock' // Перевіряємо дозволи після chmod
                                     // --- КІНЕЦЬ ДОДАНИХ РЯДКІВ ---
 
 
