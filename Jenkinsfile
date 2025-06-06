@@ -114,19 +114,20 @@ pipeline {
                                 "PATH+KUBECTL=/usr/local/bin",
                                 "KUBECONFIG=/var/jenkins_home/.kube/config" // Шлях до конфігураційного файлу всередині контейнера
                             ]) {
+                                echo "Starting Minikube cluster..."
+                                sh 'minikube start --driver=docker' // <--- ДОДАЙТЕ ЦЕЙ РЯДОК
+                                sh 'sleep 10' // <--- ДОДАЙТЕ ЦЕЙ РЯДОК (даємо Minikube час на повний запуск)
+
                                 sh 'minikube image load demo6:latest'
                                 echo "Backend image loaded into Minikube."
 
                                 echo "Correcting kubeconfig paths for Linux environment..."
-                                // Замінюємо шляхи Windows з косими рисками '/' (якщо такі є)
                                 sh 'sed -i "s|C:/Users/Den/.minikube|/var/jenkins_home/.minikube|g" ${KUBECONFIG}'
-                                // Замінюємо шляхи Windows зі зворотними скісними рисками '\'
                                 sh 'sed -i "s|C:\\\\Users\\\\Den\\\\.minikube|/var/jenkins_home/.minikube|g" ${KUBECONFIG}'
-                                // === НОВИЙ РЯДОК: Перетворюємо всі зворотні скісні риски на прямі скісні риски ===
-                                sh 'cat ${KUBECONFIG} | tr "\\\\" "/" > ${KUBECONFIG}.tmp && mv ${KUBECONFIG}.tmp ${KUBECONFIG}' // <-- ЗМІНА ТУТ
+                                sh 'cat ${KUBECONFIG} | tr "\\\\" "/" > ${KUBECONFIG}.tmp && mv ${KUBECONFIG}.tmp ${KUBECONFIG}'
                                 echo "kubeconfig paths corrected."
 
-                                echo "--- KUBECONFIG CONTENT AFTER SED ---"
+                                echo "--- KUBECONFIG CONTENT AFTER TR ---"
                                 sh 'cat ${KUBECONFIG}'
                                 echo "--- KUBECONFIG CONTENT END ---"
 
@@ -176,42 +177,45 @@ pipeline {
                 }
 
         stage('Deploy Frontend to Minikube') {
-                    steps {
-                        script {
-                            withEnv([
-                                "PATH+KUBECTL=/usr/local/bin",
-                                "KUBECONFIG=/var/jenkins_home/.kube/config"
-                            ]) {
-                                sh 'minikube image load frontend-demo:latest'
-                                echo "Frontend image loaded into Minikube."
+                            steps {
+                                script {
+                                    withEnv([
+                                        "PATH+KUBECTL=/usr/local/bin",
+                                        "KUBECONFIG=/var/jenkins_home/.kube/config"
+                                    ]) {
+                                        echo "Starting Minikube cluster..."
+                                        sh 'minikube start --driver=docker' // <--- ДОДАЙТЕ ЦЕЙ РЯДОК
+                                        sh 'sleep 10' // <--- ДОДАЙТЕ ЦЕЙ РЯДОК
 
-                                echo "Correcting kubeconfig paths for Linux environment..."
-                                sh 'sed -i "s|C:/Users/Den/.minikube|/var/jenkins_home/.minikube|g" ${KUBECONFIG}'
-                                sh 'sed -i "s|C:\\\\Users\\\\Den\\\\.minikube|/var/jenkins_home/.minikube|g" ${KUBECONFIG}'
-                                // === НОВИЙ РЯДОК: Перетворюємо всі зворотні скісні риски на прямі скісні риски ===
-                                sh 'cat ${KUBECONFIG} | tr "\\\\" "/" > ${KUBECONFIG}.tmp && mv ${KUBECONFIG}.tmp ${KUBECONFIG}'
-                                echo "kubeconfig paths corrected."
+                                        sh 'minikube image load frontend-demo:latest'
+                                        echo "Frontend image loaded into Minikube."
 
-                                echo "--- KUBECONFIG CONTENT AFTER SED ---"
-                                sh 'cat ${KUBECONFIG}'
-                                echo "--- KUBECONFIG CONTENT END ---"
+                                        echo "Correcting kubeconfig paths for Linux environment..."
+                                        sh 'sed -i "s|C:/Users/Den/.minikube|/var/jenkins_home/.minikube|g" ${KUBECONFIG}'
+                                        sh 'sed -i "s|C:\\\\Users\\\\Den\\\\.minikube|/var/jenkins_home/.minikube|g" ${KUBECONFIG}'
+                                        sh 'cat ${KUBECONFIG} | tr "\\\\" "/" > ${KUBECONFIG}.tmp && mv ${KUBECONFIG}.tmp ${KUBECONFIG}'
+                                        echo "kubeconfig paths corrected."
 
-                                echo "Applying Frontend Kubernetes manifests..."
-                                sh 'kubectl apply -f k8s/frontend/deployment.yaml'
-                                sh 'kubectl apply -f k8s/frontend/service.yaml'
+                                        echo "--- KUBECONFIG CONTENT AFTER TR ---"
+                                        sh 'cat ${KUBECONFIG}'
+                                        echo "--- KUBECONFIG CONTENT END ---"
 
-                                echo "Waiting for frontend deployment to roll out..."
-                                timeout(time: 5, unit: 'MINUTES') {
-                                    sh 'kubectl rollout status deployment/frontend-deployment --watch=true'
+                                        echo "Applying Frontend Kubernetes manifests..."
+                                        sh 'kubectl apply -f k8s/frontend/deployment.yaml'
+                                        sh 'kubectl apply -f k8s/frontend/service.yaml'
+
+                                        echo "Waiting for frontend deployment to roll out..."
+                                        timeout(time: 5, unit: 'MINUTES') {
+                                            sh 'kubectl rollout status deployment/frontend-deployment --watch=true'
+                                        }
+                                        echo "Frontend deployed to Minikube successfully."
+
+                                        echo "Access your frontend application at: "
+                                        sh 'minikube service frontend-service --url'
+                                    }
                                 }
-                                echo "Frontend deployed to Minikube successfully."
-
-                                echo "Access your frontend application at: "
-                                sh 'minikube service frontend-service --url'
                             }
                         }
-                    }
-                }
     }
 
     post {
