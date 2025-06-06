@@ -123,7 +123,7 @@ pipeline {
                                 // Замінюємо шляхи Windows зі зворотними скісними рисками '\'
                                 sh 'sed -i "s|C:\\\\Users\\\\Den\\\\.minikube|/var/jenkins_home/.minikube|g" ${KUBECONFIG}'
                                 // === НОВИЙ РЯДОК: Перетворюємо всі зворотні скісні риски на прямі скісні риски ===
-                                sh 'sed -i "s@\\\\@/@g" ${KUBECONFIG}'
+                                sh 'sed -i "s/\\\\//g" ${KUBECONFIG}' // <-- ЗМІНА ТУТ
                                 echo "kubeconfig paths corrected."
 
                                 echo "--- KUBECONFIG CONTENT AFTER SED ---"
@@ -189,7 +189,7 @@ pipeline {
                                 sh 'sed -i "s|C:/Users/Den/.minikube|/var/jenkins_home/.minikube|g" ${KUBECONFIG}'
                                 sh 'sed -i "s|C:\\\\Users\\\\Den\\\\.minikube|/var/jenkins_home/.minikube|g" ${KUBECONFIG}'
                                 // === НОВИЙ РЯДОК: Перетворюємо всі зворотні скісні риски на прямі скісні риски ===
-                                sh 'sed -i "s@\\\\@/@g" ${KUBECONFIG}'
+                                sh 'sed -i "s/\\\\//g" ${KUBECONFIG}'
                                 echo "kubeconfig paths corrected."
 
                                 echo "--- KUBECONFIG CONTENT AFTER SED ---"
