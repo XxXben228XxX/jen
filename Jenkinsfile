@@ -106,13 +106,13 @@ pipeline {
                                 echo "Correcting kubeconfig paths for Linux environment..."
                                 // Замінюємо шляхи Windows з косими рисками '/' (якщо такі є)
                                 sh 'sed -i "s|C:/Users/Den/.minikube|/var/jenkins_home/.minikube|g" ${KUBECONFIG}'
-                                // Замінюємо шляхи Windows зі зворотними скісними рисками '\' (найімовірніша причина помилки)
-                                // Тут '\' потрібно екранувати як для Groovy (один \), так і для sed (другий \)
+                                // Замінюємо шляхи Windows зі зворотними скісними рисками '\'
                                 sh 'sed -i "s|C:\\\\Users\\\\Den\\\\.minikube|/var/jenkins_home/.minikube|g" ${KUBECONFIG}'
+                                // === НОВИЙ РЯДОК: Перетворюємо всі зворотні скісні риски на прямі скісні риски ===
+                                sh 'sed -i "s|\\\\|/|g" ${KUBECONFIG}'
                                 echo "kubeconfig paths corrected."
 
                                 echo "--- KUBECONFIG CONTENT AFTER SED ---"
-                                // ЦЕ НОВИЙ РЯДОК ДЛЯ ДІАГНОСТИКИ
                                 sh 'cat ${KUBECONFIG}'
                                 echo "--- KUBECONFIG CONTENT END ---"
 
@@ -172,14 +172,13 @@ pipeline {
                                 echo "Frontend image loaded into Minikube."
 
                                 echo "Correcting kubeconfig paths for Linux environment..."
-                                // Замінюємо шляхи Windows з косими рисками '/' (якщо такі є)
                                 sh 'sed -i "s|C:/Users/Den/.minikube|/var/jenkins_home/.minikube|g" ${KUBECONFIG}'
-                                // Замінюємо шляхи Windows зі зворотними скісними рисками '\' (найімовірніша причина помилки)
                                 sh 'sed -i "s|C:\\\\Users\\\\Den\\\\.minikube|/var/jenkins_home/.minikube|g" ${KUBECONFIG}'
+                                // === НОВИЙ РЯДОК: Перетворюємо всі зворотні скісні риски на прямі скісні риски ===
+                                sh 'sed -i "s|\\\\|/|g" ${KUBECONFIG}'
                                 echo "kubeconfig paths corrected."
 
                                 echo "--- KUBECONFIG CONTENT AFTER SED ---"
-                                // ЦЕ НОВИЙ РЯДОК ДЛЯ ДІАГНОСТИКИ
                                 sh 'cat ${KUBECONFIG}'
                                 echo "--- KUBECONFIG CONTENT END ---"
 
